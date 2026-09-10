@@ -2,12 +2,12 @@ import { Ionicons } from "@expo/vector-icons";
 import { Stack, router } from "expo-router";
 import { useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    Image,
-    ScrollView,
-    StyleSheet,
-    Text,
-    View,
+  ActivityIndicator,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 
 import { apiClient } from "../services/api-client";
@@ -15,17 +15,28 @@ import { apiClient } from "../services/api-client";
 type AttendanceRecord = {
   id?: string;
   date?: string;
-  status?: string;
+  status?: "PRESENT" | "ABSENT";
 };
 
 type AttendanceTotals = {
   PRESENT?: number;
   ABSENT?: number;
-  JUSTIFIED?: number;
-  LATE?: number;
 };
 
-const SUBJECTS = ["Desarrollo Web", "Desarrollo Móvil", "Gestión de Proyecto"];
+type AttendanceResponse = {
+  success: boolean;
+  data: {
+    records: AttendanceRecord[];
+    totals: AttendanceTotals;
+  };
+  timestamp: string;
+};
+
+const SUBJECTS = [
+  "Desarrollo Web",
+  "Desarrollo Móvil",
+  "Gestión de Proyecto",
+];
 
 export default function AttendanceHistoryScreen() {
   const [loading, setLoading] = useState(true);
@@ -42,19 +53,24 @@ export default function AttendanceHistoryScreen() {
       setLoading(true);
       setError(null);
 
-      const response = await apiClient("/students/me/attendance", {
-        method: "GET",
-      });
+      const response = await apiClient<AttendanceResponse>(
+        "/students/me/attendance",
+        {
+          method: "GET",
+        },
+      );
 
       console.log(
         "Respuesta de asistencia:",
         JSON.stringify(response, null, 2),
       );
 
-      const attendanceData = response?.data;
+      const attendanceData = response.data;
 
       setRecords(
-        Array.isArray(attendanceData?.records) ? attendanceData.records : [],
+        Array.isArray(attendanceData?.records)
+          ? attendanceData.records
+          : [],
       );
 
       setTotals(attendanceData?.totals || {});
@@ -147,16 +163,24 @@ export default function AttendanceHistoryScreen() {
             <View style={styles.centerContainer}>
               <ActivityIndicator size="large" color="#4070B2" />
 
-              <Text style={styles.loadingText}>Consultando asistencia...</Text>
+              <Text style={styles.loadingText}>
+                Consultando asistencia...
+              </Text>
             </View>
           )}
 
           {/* ERROR */}
           {!loading && error && (
             <View style={styles.messageCard}>
-              <Ionicons name="alert-circle-outline" size={38} color="#DC2626" />
+              <Ionicons
+                name="alert-circle-outline"
+                size={38}
+                color="#DC2626"
+              />
 
-              <Text style={styles.messageTitle}>Ocurrió un problema</Text>
+              <Text style={styles.messageTitle}>
+                Ocurrió un problema
+              </Text>
 
               <Text style={styles.messageText}>{error}</Text>
             </View>
@@ -168,9 +192,13 @@ export default function AttendanceHistoryScreen() {
               <Text style={styles.summaryTitle}>Resumen</Text>
 
               <View style={styles.summaryRow}>
+                {/* PRESENTES */}
                 <View style={styles.summaryItem}>
                   <View
-                    style={[styles.summaryIcon, { backgroundColor: "#EAF1FA" }]}
+                    style={[
+                      styles.summaryIcon,
+                      { backgroundColor: "#EAF1FA" },
+                    ]}
                   >
                     <Ionicons
                       name="checkmark-circle-outline"
@@ -179,18 +207,29 @@ export default function AttendanceHistoryScreen() {
                     />
                   </View>
 
-                  <Text style={[styles.summaryNumber, { color: "#4070B2" }]}>
+                  <Text
+                    style={[
+                      styles.summaryNumber,
+                      { color: "#4070B2" },
+                    ]}
+                  >
                     {totals.PRESENT ?? 0}
                   </Text>
 
-                  <Text style={styles.summaryLabel}>Presentes</Text>
+                  <Text style={styles.summaryLabel}>
+                    Presentes
+                  </Text>
                 </View>
 
                 <View style={styles.summaryDivider} />
 
+                {/* AUSENTES */}
                 <View style={styles.summaryItem}>
                   <View
-                    style={[styles.summaryIcon, { backgroundColor: "#FEECEC" }]}
+                    style={[
+                      styles.summaryIcon,
+                      { backgroundColor: "#FEECEC" },
+                    ]}
                   >
                     <Ionicons
                       name="close-circle-outline"
@@ -199,11 +238,18 @@ export default function AttendanceHistoryScreen() {
                     />
                   </View>
 
-                  <Text style={[styles.summaryNumber, { color: "#DC2626" }]}>
+                  <Text
+                    style={[
+                      styles.summaryNumber,
+                      { color: "#DC2626" },
+                    ]}
+                  >
                     {totals.ABSENT ?? 0}
                   </Text>
 
-                  <Text style={styles.summaryLabel}>Ausentes</Text>
+                  <Text style={styles.summaryLabel}>
+                    Ausentes
+                  </Text>
                 </View>
               </View>
             </View>
@@ -213,13 +259,20 @@ export default function AttendanceHistoryScreen() {
           {!loading && !error && records.length === 0 && (
             <View style={styles.messageCard}>
               <View style={styles.emptyIcon}>
-                <Ionicons name="calendar-outline" size={32} color="#4070B2" />
+                <Ionicons
+                  name="calendar-outline"
+                  size={32}
+                  color="#4070B2"
+                />
               </View>
 
-              <Text style={styles.messageTitle}>Sin registros</Text>
+              <Text style={styles.messageTitle}>
+                Sin registros
+              </Text>
 
               <Text style={styles.messageText}>
-                Todavía no hay registros de asistencia para mostrar.
+                Todavía no hay registros de asistencia para
+                mostrar.
               </Text>
             </View>
           )}
@@ -227,10 +280,15 @@ export default function AttendanceHistoryScreen() {
           {/* REGISTROS */}
           {!loading && !error && records.length > 0 && (
             <View style={styles.recordsContainer}>
-              <Text style={styles.recordsTitle}>Registros</Text>
+              <Text style={styles.recordsTitle}>
+                Registros
+              </Text>
 
               {records.map((record, index) => (
-                <View key={record.id ?? index} style={styles.recordCard}>
+                <View
+                  key={record.id ?? index}
+                  style={styles.recordCard}
+                >
                   <View style={styles.recordIcon}>
                     <Ionicons
                       name="calendar-outline"
@@ -245,7 +303,9 @@ export default function AttendanceHistoryScreen() {
                     </Text>
 
                     {record.date && (
-                      <Text style={styles.recordDate}>{record.date}</Text>
+                      <Text style={styles.recordDate}>
+                        {record.date}
+                      </Text>
                     )}
                   </View>
 
@@ -254,7 +314,7 @@ export default function AttendanceHistoryScreen() {
                       styles.statusBadge,
                       {
                         backgroundColor:
-                          record.status?.toUpperCase() === "PRESENT"
+                          record.status === "PRESENT"
                             ? "#EAF1FA"
                             : "#FEECEC",
                       },
@@ -264,7 +324,9 @@ export default function AttendanceHistoryScreen() {
                       style={[
                         styles.recordStatus,
                         {
-                          color: getStatusColor(record.status),
+                          color: getStatusColor(
+                            record.status,
+                          ),
                         },
                       ]}
                     >
@@ -348,8 +410,6 @@ const styles = StyleSheet.create({
     color: "#6B7280",
   },
 
-  /* RESUMEN */
-
   summaryCard: {
     backgroundColor: "#FFFFFF",
     borderRadius: 18,
@@ -408,8 +468,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#E5E7EB",
   },
 
-  /* MENSAJE */
-
   messageCard: {
     backgroundColor: "#FFFFFF",
     borderRadius: 18,
@@ -441,8 +499,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 20,
   },
-
-  /* REGISTROS */
 
   recordsContainer: {
     gap: 12,

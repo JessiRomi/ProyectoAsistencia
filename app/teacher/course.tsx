@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import {
   Pressable,
   ScrollView,
@@ -9,8 +9,19 @@ import {
 } from "react-native";
 
 export default function TeacherCourseScreen() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+
   function openAttendance() {
     router.push("/teacher/attendance");
+  }
+
+  function openStudents() {
+    router.push({
+      pathname: "/teacher/course-students",
+      params: {
+        id: id ?? "temporary-aplicaciones-moviles",
+      },
+    });
   }
 
   return (
@@ -101,6 +112,40 @@ export default function TeacherCourseScreen() {
           Gestión de la cursada
         </Text>
 
+        {/* Ver estudiantes */}
+        <Pressable
+          style={({ pressed }) => [
+            styles.actionCard,
+            pressed && styles.actionCardPressed,
+          ]}
+          onPress={openStudents}
+        >
+          <View style={styles.actionIcon}>
+            <Ionicons
+              name="people-outline"
+              size={27}
+              color="#FFFFFF"
+            />
+          </View>
+
+          <View style={styles.actionContent}>
+            <Text style={styles.actionTitle}>
+              Ver estudiantes
+            </Text>
+
+            <Text style={styles.actionDescription}>
+              Consultar los alumnos inscriptos en esta cursada.
+            </Text>
+          </View>
+
+          <Ionicons
+            name="chevron-forward"
+            size={22}
+            color="#9CA3AF"
+          />
+        </Pressable>
+
+        {/* Tomar asistencia */}
         <Pressable
           style={({ pressed }) => [
             styles.actionCard,
@@ -285,6 +330,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     borderRadius: 16,
     padding: 15,
+    marginBottom: 12,
     flexDirection: "row",
     alignItems: "center",
     elevation: 2,

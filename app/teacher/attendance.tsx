@@ -1,256 +1,191 @@
-import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
 import { useState } from "react";
 import {
   Alert,
+  FlatList,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   View,
 } from "react-native";
 
+import { AttendanceStatusSelector } from "@/components/attendance/AttendanceStatusSelector";
+
 type Student = {
   id: string;
-  name: string;
-  present: boolean;
+  firstName: string;
+  lastName: string;
 };
 
-const INITIAL_STUDENTS: Student[] = [
+type AttendanceState = Record<string, boolean>;
+
+const students: Student[] = [
   {
     id: "1",
-    name: "Juan Pérez",
-    present: false,
+    firstName: "Sofía",
+    lastName: "Gómez",
   },
   {
     id: "2",
-    name: "María González",
-    present: false,
+    firstName: "Martín",
+    lastName: "Rodríguez",
   },
   {
     id: "3",
-    name: "Lucas Rodríguez",
-    present: false,
+    firstName: "Lucía",
+    lastName: "Fernández",
   },
   {
     id: "4",
-    name: "Sofía Fernández",
-    present: false,
+    firstName: "Tomás",
+    lastName: "Pérez",
   },
   {
     id: "5",
-    name: "Martín López",
-    present: false,
+    firstName: "Valentina",
+    lastName: "López",
   },
   {
     id: "6",
-    name: "Valentina Díaz",
-    present: false,
+    firstName: "Nicolás",
+    lastName: "García",
   },
   {
     id: "7",
-    name: "Nicolás Martínez",
-    present: false,
+    firstName: "Camila",
+    lastName: "Martínez",
   },
   {
     id: "8",
-    name: "Camila Romero",
-    present: false,
+    firstName: "Juan",
+    lastName: "Sánchez",
   },
 ];
 
-export default function TeacherAttendanceScreen() {
-  const [students, setStudents] =
-    useState<Student[]>(INITIAL_STUDENTS);
-
-  function toggleAttendance(id: string) {
-    setStudents((current) =>
-      current.map((student) =>
-        student.id === id
-          ? {
-              ...student,
-              present: !student.present,
-            }
-          : student
-      )
+export default function AttendanceScreen() {
+  const [attendance, setAttendance] =
+    useState<AttendanceState>(() =>
+      Object.fromEntries(
+        students.map((student) => [student.id, false]),
+      ),
     );
+
+  const presentCount = students.filter(
+    (student) => attendance[student.id],
+  ).length;
+
+  const absentCount = students.length - presentCount;
+
+  function updateAttendance(
+    studentId: string,
+    present: boolean,
+  ) {
+    setAttendance((current) => ({
+      ...current,
+      [studentId]: present,
+    }));
   }
 
-  function markAllPresent() {
-    setStudents((current) =>
-      current.map((student) => ({
-        ...student,
-        present: true,
-      }))
+  function markEveryonePresent() {
+    setAttendance(
+      Object.fromEntries(
+        students.map((student) => [student.id, true]),
+      ),
     );
   }
 
   function saveAttendance() {
-    const present = students.filter(
-      (student) => student.present
-    ).length;
-
     Alert.alert(
-      "Asistencia registrada",
-      `Se registraron ${present} presentes de ${students.length} estudiantes.`
+      "Asistencia",
+      "La asistencia se guardaría mediante la API en este punto.",
     );
   }
 
-  const presentCount = students.filter(
-    (student) => student.present
-  ).length;
-
   return (
     <View style={styles.container}>
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
+      <View style={styles.header}>
+        <Text style={styles.title}>
+          Tomar asistencia
+        </Text>
+
+        <Text style={styles.subtitle}>
+          Aplicaciones Móviles · Comisión A
+        </Text>
+      </View>
+
+      <View style={styles.summary}>
+        <View style={styles.summaryItem}>
+          <Text style={styles.summaryNumber}>
+            {presentCount}
+          </Text>
+
+          <Text style={styles.summaryLabel}>
+            Presentes
+          </Text>
+        </View>
+
+        <View style={styles.divider} />
+
+        <View style={styles.summaryItem}>
+          <Text style={styles.summaryNumber}>
+            {absentCount}
+          </Text>
+
+          <Text style={styles.summaryLabel}>
+            Ausentes
+          </Text>
+        </View>
+      </View>
+
+      <Pressable
+        style={styles.allPresentButton}
+        onPress={markEveryonePresent}
       >
-        <Pressable
-          style={styles.backRow}
-          onPress={() => router.back()}
-        >
-          <Ionicons
-            name="arrow-back"
-            size={22}
-            color="#4070B2"
-          />
+        <Text style={styles.allPresentText}>
+          Marcar todos presentes
+        </Text>
+      </Pressable>
 
-          <Text style={styles.backText}>
-            Aplicaciones Móviles
-          </Text>
-        </Pressable>
-
-        <View style={styles.header}>
-          <View>
-            <Text style={styles.title}>
-              Tomar asistencia
-            </Text>
-
-            <Text style={styles.subtitle}>
-              Aplicaciones Móviles · Comisión A
-            </Text>
-          </View>
-        </View>
-
-        <View style={styles.summaryCard}>
-          <View style={styles.summaryItem}>
-            <Text style={styles.summaryNumber}>
-              {students.length}
-            </Text>
-
-            <Text style={styles.summaryLabel}>
-              Alumnos
-            </Text>
-          </View>
-
-          <View style={styles.divider} />
-
-          <View style={styles.summaryItem}>
-            <Text style={styles.summaryNumber}>
-              {presentCount}
-            </Text>
-
-            <Text style={styles.summaryLabel}>
-              Presentes
-            </Text>
-          </View>
-
-          <View style={styles.divider} />
-
-          <View style={styles.summaryItem}>
-            <Text style={styles.summaryNumber}>
-              {students.length - presentCount}
-            </Text>
-
-            <Text style={styles.summaryLabel}>
-              Ausentes
-            </Text>
-          </View>
-        </View>
-
-        <View style={styles.actionsRow}>
-          <Text style={styles.listTitle}>
-            Lista de alumnos
-          </Text>
-
-          <Pressable
-            style={styles.allButton}
-            onPress={markAllPresent}
-          >
-            <Text style={styles.allButtonText}>
-              Todos presentes
-            </Text>
-          </Pressable>
-        </View>
-
-        <View style={styles.studentList}>
-          {students.map((student, index) => (
-            <Pressable
-              key={student.id}
-              style={[
-                styles.studentRow,
-                index !== students.length - 1 &&
-                  styles.studentBorder,
-              ]}
-              onPress={() =>
-                toggleAttendance(student.id)
-              }
-            >
+      <FlatList
+        data={students}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.list}
+        renderItem={({ item }) => (
+          <View style={styles.studentCard}>
+            <View style={styles.studentInfo}>
               <View style={styles.avatar}>
                 <Text style={styles.avatarText}>
-                  {student.name.charAt(0)}
+                  {item.firstName.charAt(0)}
+                  {item.lastName.charAt(0)}
                 </Text>
               </View>
 
-              <View style={styles.studentInfo}>
+              <View style={styles.nameContainer}>
                 <Text style={styles.studentName}>
-                  {student.name}
-                </Text>
-
-                <Text style={styles.studentStatus}>
-                  {student.present
-                    ? "Presente"
-                    : "Ausente"}
+                  {item.firstName} {item.lastName}
                 </Text>
               </View>
+            </View>
 
-              <View
-                style={[
-                  styles.checkButton,
-                  student.present &&
-                    styles.checkButtonActive,
-                ]}
-              >
-                <Ionicons
-                  name={
-                    student.present
-                      ? "checkmark"
-                      : "close"
-                  }
-                  size={21}
-                  color="#FFFFFF"
-                />
-              </View>
-            </Pressable>
-          ))}
-        </View>
+            <AttendanceStatusSelector
+              present={attendance[item.id]}
+              onChange={(present) =>
+                updateAttendance(item.id, present)
+              }
+            />
+          </View>
+        )}
+      />
 
+      <View style={styles.footer}>
         <Pressable
           style={styles.saveButton}
           onPress={saveAttendance}
         >
-          <Ionicons
-            name="save-outline"
-            size={21}
-            color="#FFFFFF"
-          />
-
           <Text style={styles.saveButtonText}>
             Guardar asistencia
           </Text>
         </Pressable>
-      </ScrollView>
+      </View>
     </View>
   );
 }
@@ -258,30 +193,13 @@ export default function TeacherAttendanceScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F4F7FB",
-  },
-
-  scrollContent: {
-    paddingHorizontal: 20,
-    paddingTop: 25,
-    paddingBottom: 40,
-  },
-
-  backRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 7,
-    marginBottom: 22,
-  },
-
-  backText: {
-    color: "#4070B2",
-    fontSize: 14,
-    fontWeight: "700",
+    backgroundColor: "#F5F7FA",
   },
 
   header: {
-    marginBottom: 20,
+    paddingHorizontal: 20,
+    paddingTop: 55,
+    paddingBottom: 15,
   },
 
   title: {
@@ -296,14 +214,15 @@ const styles = StyleSheet.create({
     color: "#6B7280",
   },
 
-  summaryCard: {
+  summary: {
+    marginHorizontal: 20,
+    marginBottom: 12,
+    padding: 16,
     backgroundColor: "#FFFFFF",
-    borderRadius: 18,
-    paddingVertical: 20,
+    borderRadius: 16,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-around",
-    marginBottom: 25,
   },
 
   summaryItem: {
@@ -314,7 +233,7 @@ const styles = StyleSheet.create({
   summaryNumber: {
     fontSize: 24,
     fontWeight: "800",
-    color: "#4070B2",
+    color: "#1F2937",
   },
 
   summaryLabel: {
@@ -329,108 +248,90 @@ const styles = StyleSheet.create({
     backgroundColor: "#E5E7EB",
   },
 
-  actionsRow: {
+  allPresentButton: {
+    marginHorizontal: 20,
+    marginBottom: 10,
+    paddingVertical: 12,
+    alignItems: "center",
+    borderRadius: 12,
+    backgroundColor: "#E8F0FB",
+  },
+
+  allPresentText: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#4070B2",
+  },
+
+  list: {
+    paddingHorizontal: 20,
+    paddingBottom: 110,
+    gap: 10,
+  },
+
+  studentCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    padding: 14,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 12,
   },
 
-  listTitle: {
-    fontSize: 19,
-    fontWeight: "800",
-    color: "#1F2937",
-  },
-
-  allButton: {
-    backgroundColor: "#E8F0FB",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 9,
-  },
-
-  allButtonText: {
-    color: "#4070B2",
-    fontSize: 12,
-    fontWeight: "700",
-  },
-
-  studentList: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 18,
-    paddingHorizontal: 16,
-  },
-
-  studentRow: {
+  studentInfo: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: 14,
-  },
-
-  studentBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: "#EEF1F5",
+    flex: 1,
+    marginRight: 10,
   },
 
   avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     backgroundColor: "#E8F0FB",
     alignItems: "center",
     justifyContent: "center",
   },
 
   avatarText: {
-    color: "#4070B2",
-    fontSize: 17,
+    fontSize: 14,
     fontWeight: "800",
+    color: "#4070B2",
   },
 
-  studentInfo: {
+  nameContainer: {
     flex: 1,
-    marginLeft: 13,
+    marginLeft: 11,
   },
 
   studentName: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: "700",
     color: "#1F2937",
   },
 
-  studentStatus: {
-    marginTop: 3,
-    fontSize: 12,
-    color: "#6B7280",
-  },
-
-  checkButton: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
-    backgroundColor: "#9CA3AF",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  checkButtonActive: {
-    backgroundColor: "#4070B2",
+  footer: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    padding: 16,
+    backgroundColor: "#FFFFFF",
+    borderTopWidth: 1,
+    borderTopColor: "#E5E7EB",
   },
 
   saveButton: {
-    marginTop: 22,
-    height: 52,
-    borderRadius: 14,
-    backgroundColor: "#4070B2",
-    flexDirection: "row",
+    paddingVertical: 15,
+    borderRadius: 13,
     alignItems: "center",
-    justifyContent: "center",
-    gap: 9,
+    backgroundColor: "#4070B2",
   },
 
   saveButtonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "800",
+    color: "#FFFFFF",
   },
 });

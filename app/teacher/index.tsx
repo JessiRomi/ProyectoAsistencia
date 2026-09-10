@@ -1,78 +1,110 @@
-import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useRouter } from "expo-router";
+import {
+  ActivityIndicator,
+  FlatList,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
-import LogoutButton from "@/components/logout-button";
+import { CourseOfferingCard } from "@/components/courses/CourseOfferingCard";
+import { useTeacherCourses } from "@/features/courses/useTeacherCourses";
 
 export default function TeacherHomeScreen() {
-  function openCourse() {
-    router.push("/teacher/course");
+  const router = useRouter();
+
+  const {
+    courses,
+    isLoading,
+    error,
+    reload,
+  } = useTeacherCourses();
+
+  // Por ahora la API devuelve [] porque el profesor
+  // todavía no tiene una cursada asociada.
+  // Usamos esta cursada temporalmente.
+  const temporaryCourse = {
+    id: "temporary-aplicaciones-moviles",
+    commission: "A",
+    shift: "EVENING" as const,
+    subject: {
+      id: "temporary-subject",
+      name: "Aplicaciones Móviles",
+      code: "APM",
+    },
+    academicYear: {
+      id: "temporary-year",
+      year: 2026,
+      name: "2026",
+    },
+  };
+
+  const displayedCourses =
+    courses.length > 0 ? courses : [temporaryCourse];
+
+  if (isLoading) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" />
+        <Text style={styles.message}>
+          Cargando cursadas...
+        </Text>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.center}>
+        <Text style={styles.error}>
+          {error}
+        </Text>
+
+        <Text
+          style={styles.retry}
+          onPress={reload}
+        >
+          Reintentar
+        </Text>
+      </View>
+    );
   }
 
   return (
     <View style={styles.container}>
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.header}>
-          <View style={styles.headerContent}>
-            <Text style={styles.greeting}>¡Bienvenido!</Text>
-            <Text style={styles.subtitle}>Espacio docente</Text>
-          </View>
+      <View style={styles.header}>
+        <Text style={styles.title}>
+          Mis cursadas
+        </Text>
 
-          <View style={styles.logoContainer}>
-            <Text style={styles.logoText}>ITS</Text>
-          </View>
-        </View>
+        <Text style={styles.subtitle}>
+          Seleccioná una cursada para continuar
+        </Text>
+      </View>
 
-        <LogoutButton />
-
-        <Text style={styles.sectionTitle}>Mis cursadas</Text>
-
-        <Pressable
-          style={({ pressed }) => [
-            styles.courseCard,
-            pressed && styles.courseCardPressed,
-          ]}
-          onPress={openCourse}
-        >
-          <View style={styles.courseIcon}>
-            <Ionicons
-              name="book-outline"
-              size={28}
-              color="#FFFFFF"
-            />
-          </View>
-
-          <View style={styles.courseContent}>
-            <Text style={styles.courseName}>
-              Aplicaciones Móviles
-            </Text>
-
-            <Text style={styles.courseCode}>AMOV</Text>
-
-            <View style={styles.courseDetails}>
-              <Text style={styles.detailText}>Comisión A</Text>
-              <Text style={styles.detailText}>EVENING</Text>
-            </View>
-
-            <Text style={styles.scheduleText}>
-              Martes · 19:00 - 22:00
-            </Text>
-
-            <Text style={styles.classroomText}>
-              Aula: Lab 2
-            </Text>
-          </View>
-
-          <Ionicons
-            name="chevron-forward"
-            size={24}
-            color="#9CA3AF"
+      <FlatList
+        data={displayedCourses}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.list}
+        renderItem={({ item }) => (
+          <CourseOfferingCard
+            course={item}
+            onPress={() =>
+              router.push({
+                pathname: "/teacher/course",
+                params: {
+                  id: item.id,
+                },
+              })
+            }
           />
-        </Pressable>
-      </ScrollView>
+        )}
+        ListEmptyComponent={
+          <Text style={styles.empty}>
+            No tenés cursadas asignadas.
+          </Text>
+        }
+      />
     </View>
   );
 }
@@ -80,128 +112,62 @@ export default function TeacherHomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F4F7FB",
-  },
-
-  scrollContent: {
-    paddingHorizontal: 20,
-    paddingTop: 55,
-    paddingBottom: 30,
+    backgroundColor: "#F5F7FA",
   },
 
   header: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 20,
+    paddingHorizontal: 20,
+    paddingTop: 60,
+    paddingBottom: 20,
   },
 
-  headerContent: {
-    flex: 1,
-  },
-
-  greeting: {
+  title: {
     fontSize: 28,
     fontWeight: "800",
     color: "#1F2937",
   },
 
   subtitle: {
+    marginTop: 6,
+    fontSize: 14,
+    color: "#6B7280",
+  },
+
+  list: {
+    paddingHorizontal: 20,
+    paddingBottom: 30,
+    gap: 12,
+  },
+
+  center: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 20,
+  },
+
+  message: {
+    marginTop: 12,
     fontSize: 15,
     color: "#6B7280",
-    marginTop: 5,
   },
 
-  logoContainer: {
-    width: 58,
-    height: 58,
-    borderRadius: 29,
-    backgroundColor: "#4070B2",
-    alignItems: "center",
-    justifyContent: "center",
+  error: {
+    textAlign: "center",
+    fontSize: 15,
+    color: "#B91C1C",
   },
 
-  logoText: {
-    color: "#FFFFFF",
-    fontSize: 19,
-    fontWeight: "900",
-    letterSpacing: 1,
-  },
-
-  sectionTitle: {
-    fontSize: 21,
-    fontWeight: "800",
-    color: "#1F2937",
-    marginTop: 30,
-    marginBottom: 15,
-  },
-
-  courseCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 18,
-    padding: 17,
-    flexDirection: "row",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-
-  courseCardPressed: {
-    opacity: 0.8,
-  },
-
-  courseIcon: {
-    width: 50,
-    height: 50,
-    borderRadius: 15,
-    backgroundColor: "#4070B2",
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 14,
-  },
-
-  courseContent: {
-    flex: 1,
-  },
-
-  courseName: {
-    fontSize: 17,
-    fontWeight: "800",
-    color: "#1F2937",
-  },
-
-  courseCode: {
-    fontSize: 12,
-    color: "#6B7280",
-    marginTop: 3,
-  },
-
-  courseDetails: {
-    flexDirection: "row",
-    gap: 12,
-    marginTop: 9,
-  },
-
-  detailText: {
-    fontSize: 13,
+  retry: {
+    marginTop: 15,
+    fontSize: 16,
+    fontWeight: "700",
     color: "#4070B2",
-    fontWeight: "600",
   },
 
-  scheduleText: {
-    fontSize: 13,
-    color: "#374151",
-    marginTop: 6,
-  },
-
-  classroomText: {
-    fontSize: 12,
+  empty: {
+    textAlign: "center",
+    marginTop: 40,
     color: "#6B7280",
-    marginTop: 3,
   },
 });
