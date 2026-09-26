@@ -1,7 +1,8 @@
-import { useRouter } from "expo-router";
+import { router } from "expo-router";
 import {
   ActivityIndicator,
   FlatList,
+  Pressable,
   StyleSheet,
   Text,
   View,
@@ -9,10 +10,9 @@ import {
 
 import { CourseOfferingCard } from "@/components/courses/CourseOfferingCard";
 import { useTeacherCourses } from "@/features/courses/useTeacherCourses";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function TeacherHomeScreen() {
-  const router = useRouter();
-
   const {
     courses,
     isLoading,
@@ -20,34 +20,23 @@ export default function TeacherHomeScreen() {
     reload,
   } = useTeacherCourses();
 
-  // Por ahora la API devuelve [] porque el profesor
-  // todavía no tiene una cursada asociada.
-  // Usamos esta cursada temporalmente.
-  const temporaryCourse = {
-    id: "temporary-aplicaciones-moviles",
-    commission: "A",
-    shift: "EVENING" as const,
-    subject: {
-      id: "temporary-subject",
-      name: "Aplicaciones Móviles",
-      code: "APM",
-    },
-    academicYear: {
-      id: "temporary-year",
-      year: 2026,
-      name: "2026",
-    },
-  };
+  const { logout } = useAuth();
 
-  const displayedCourses =
-    courses.length > 0 ? courses : [temporaryCourse];
+  async function handleLogout() {
+    await logout();
+    router.replace("/login");
+  }
 
   if (isLoading) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" />
-        <Text style={styles.message}>
-          Cargando cursadas...
+      <View style={styles.centerContainer}>
+        <ActivityIndicator
+          size="large"
+          color="#4070B2"
+        />
+
+        <Text style={styles.loadingText}>
+          Cargando tus cursadas...
         </Text>
       </View>
     );
@@ -55,37 +44,92 @@ export default function TeacherHomeScreen() {
 
   if (error) {
     return (
-      <View style={styles.center}>
-        <Text style={styles.error}>
+      <View style={styles.centerContainer}>
+        <Text style={styles.errorTitle}>
+          No se pudieron cargar las cursadas
+        </Text>
+
+        <Text style={styles.errorText}>
           {error}
         </Text>
 
-        <Text
-          style={styles.retry}
+        <Pressable
+          style={styles.retryButton}
           onPress={reload}
         >
-          Reintentar
+          <Text style={styles.retryButtonText}>
+            Reintentar
+          </Text>
+        </Pressable>
+
+        <Pressable
+          style={styles.logoutButton}
+          onPress={handleLogout}
+        >
+          <Text style={styles.logoutButtonText}>
+            Cerrar sesión
+          </Text>
+        </Pressable>
+      </View>
+    );
+  }
+
+  if (courses.length === 0) {
+    return (
+      <View style={styles.centerContainer}>
+        <Text style={styles.emptyTitle}>
+          No tenés cursadas asignadas
         </Text>
+
+        <Text style={styles.emptyText}>
+          No se encontraron cursadas para este profesor.
+        </Text>
+
+        <Pressable
+          style={styles.logoutButton}
+          onPress={handleLogout}
+        >
+          <Text style={styles.logoutButtonText}>
+            Cerrar sesión
+          </Text>
+        </Pressable>
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>
-          Mis cursadas
-        </Text>
-
-        <Text style={styles.subtitle}>
-          Seleccioná una cursada para continuar
-        </Text>
-      </View>
-
       <FlatList
-        data={displayedCourses}
+        data={courses}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.list}
+        contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
+        refreshing={isLoading}
+        onRefresh={reload}
+        ListHeaderComponent={
+          <View style={styles.header}>
+            <View style={styles.headerTop}>
+              <View style={styles.headerText}>
+                <Text style={styles.title}>
+                  Mis cursadas
+                </Text>
+
+                <Text style={styles.subtitle}>
+                  Seleccioná una cursada para continuar
+                </Text>
+              </View>
+
+              <Pressable
+                style={styles.logoutButton}
+                onPress={handleLogout}
+              >
+                <Text style={styles.logoutButtonText}>
+                  Salir
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+        }
         renderItem={({ item }) => (
           <CourseOfferingCard
             course={item}
@@ -99,11 +143,6 @@ export default function TeacherHomeScreen() {
             }
           />
         )}
-        ListEmptyComponent={
-          <Text style={styles.empty}>
-            No tenés cursadas asignadas.
-          </Text>
-        }
       />
     </View>
   );
@@ -112,13 +151,28 @@ export default function TeacherHomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F5F7FA",
+    backgroundColor: "#F4F7FB",
+  },
+
+  listContent: {
+    paddingHorizontal: 20,
+    paddingTop: 30,
+    paddingBottom: 35,
   },
 
   header: {
-    paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 20,
+    marginBottom: 20,
+  },
+
+  headerTop: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+
+  headerText: {
+    flex: 1,
+    paddingRight: 15,
   },
 
   title: {
@@ -133,41 +187,72 @@ const styles = StyleSheet.create({
     color: "#6B7280",
   },
 
-  list: {
-    paddingHorizontal: 20,
-    paddingBottom: 30,
-    gap: 12,
-  },
-
-  center: {
+  centerContainer: {
     flex: 1,
+    backgroundColor: "#F4F7FB",
     alignItems: "center",
     justifyContent: "center",
-    padding: 20,
+    paddingHorizontal: 30,
   },
 
-  message: {
+  loadingText: {
     marginTop: 12,
     fontSize: 15,
     color: "#6B7280",
   },
 
-  error: {
+  errorTitle: {
+    fontSize: 19,
+    fontWeight: "800",
+    color: "#1F2937",
     textAlign: "center",
-    fontSize: 15,
-    color: "#B91C1C",
   },
 
-  retry: {
-    marginTop: 15,
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#4070B2",
-  },
-
-  empty: {
-    textAlign: "center",
-    marginTop: 40,
+  errorText: {
+    marginTop: 8,
+    fontSize: 14,
     color: "#6B7280",
+    textAlign: "center",
+  },
+
+  retryButton: {
+    marginTop: 20,
+    backgroundColor: "#4070B2",
+    borderRadius: 10,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+  },
+
+  retryButtonText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "700",
+  },
+
+  emptyTitle: {
+    fontSize: 19,
+    fontWeight: "800",
+    color: "#1F2937",
+    textAlign: "center",
+  },
+
+  emptyText: {
+    marginTop: 8,
+    fontSize: 14,
+    color: "#6B7280",
+    textAlign: "center",
+  },
+
+  logoutButton: {
+    backgroundColor: "#E5E7EB",
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+  },
+
+  logoutButtonText: {
+    color: "#374151",
+    fontSize: 13,
+    fontWeight: "700",
   },
 });

@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import {
+  ActivityIndicator,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -8,21 +9,107 @@ import {
   View,
 } from "react-native";
 
+import { useTeacherCourses } from "@/features/courses/useTeacherCourses";
+
 export default function TeacherCourseScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
 
-  function openAttendance() {
-    router.push("/teacher/attendance");
-  }
+  const {
+    courses,
+    isLoading,
+    error,
+  } = useTeacherCourses();
 
-  function openStudents() {
+  const course = courses.find((item) => item.id === id);
+
+  function openAttendance() {
+    if (!id) {
+      return;
+    }
+
     router.push({
-      pathname: "/teacher/course-students",
+      pathname: "/teacher/attendance",
       params: {
-        id: id ?? "temporary-aplicaciones-moviles",
+        id,
       },
     });
   }
+
+  function openStudents() {
+    if (!id) {
+      return;
+    }
+
+    router.push({
+      pathname: "/teacher/course-students",
+      params: {
+        id,
+      },
+    });
+  }
+
+  if (isLoading) {
+    return (
+      <View style={styles.centerContainer}>
+        <ActivityIndicator
+          size="large"
+          color="#4070B2"
+        />
+
+        <Text style={styles.loadingText}>
+          Cargando información de la cursada...
+        </Text>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.centerContainer}>
+        <Text style={styles.errorTitle}>
+          No se pudo cargar la cursada
+        </Text>
+
+        <Text style={styles.errorText}>
+          {error}
+        </Text>
+
+        <Pressable
+          style={styles.retryButton}
+          onPress={() => router.back()}
+        >
+          <Text style={styles.retryButtonText}>
+            Volver
+          </Text>
+        </Pressable>
+      </View>
+    );
+  }
+
+  if (!course) {
+    return (
+      <View style={styles.centerContainer}>
+        <Text style={styles.errorTitle}>
+          Cursada no encontrada
+        </Text>
+
+        <Text style={styles.errorText}>
+          No se encontró la cursada seleccionada.
+        </Text>
+
+        <Pressable
+          style={styles.retryButton}
+          onPress={() => router.back()}
+        >
+          <Text style={styles.retryButtonText}>
+            Volver a mis cursadas
+          </Text>
+        </Pressable>
+      </View>
+    );
+  }
+
+  const schedule = course.scheduleSlots?.[0];
 
   return (
     <View style={styles.container}>
@@ -30,6 +117,7 @@ export default function TeacherCourseScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
+        {/* Volver */}
         <Pressable
           style={styles.backRow}
           onPress={() => router.back()}
@@ -45,6 +133,7 @@ export default function TeacherCourseScreen() {
           </Text>
         </Pressable>
 
+        {/* Encabezado */}
         <View style={styles.header}>
           <View style={styles.headerIcon}>
             <Ionicons
@@ -56,15 +145,16 @@ export default function TeacherCourseScreen() {
 
           <View style={styles.headerContent}>
             <Text style={styles.title}>
-              Aplicaciones Móviles
+              {course.subject.name}
             </Text>
 
             <Text style={styles.code}>
-              AMOV
+              {course.subject.code}
             </Text>
           </View>
         </View>
 
+        {/* Información */}
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>
             Información de la cursada
@@ -73,46 +163,75 @@ export default function TeacherCourseScreen() {
           <InfoRow
             icon="people-outline"
             label="Comisión"
-            value="A"
+            value={course.commission}
           />
 
           <InfoRow
             icon="time-outline"
             label="Turno"
-            value="EVENING"
+            value={formatShift(course.shift)}
           />
 
           <InfoRow
             icon="calendar-outline"
-            label="Día"
-            value="Martes"
+            label="Ciclo lectivo"
+            value={course.academicYear.name}
           />
 
           <InfoRow
-            icon="time-outline"
-            label="Horario"
-            value="19:00 - 22:00"
+            icon="school-outline"
+            label="Año académico"
+            value={String(course.academicYear.year)}
           />
 
-          <InfoRow
-            icon="location-outline"
-            label="Aula"
-            value="Lab 2"
-          />
+          {schedule?.dayOfWeek !== undefined && (
+            <InfoRow
+              icon="calendar-outline"
+              label="Día"
+              value={formatDay(schedule.dayOfWeek)}
+            />
+          )}
 
-          <InfoRow
-            icon="people-circle-outline"
-            label="Capacidad"
-            value="40 estudiantes"
-            last
-          />
+          {schedule?.startTime && schedule?.endTime && (
+            <InfoRow
+              icon="time-outline"
+              label="Horario"
+              value={`${schedule.startTime} - ${schedule.endTime}`}
+            />
+          )}
+
+          {schedule?.classroom && (
+            <InfoRow
+              icon="location-outline"
+              label="Aula"
+              value={schedule.classroom}
+            />
+          )}
+
+          {course.classroom && !schedule?.classroom && (
+            <InfoRow
+              icon="location-outline"
+              label="Aula"
+              value={course.classroom}
+            />
+          )}
+
+          {course.maxCapacity !== undefined && (
+            <InfoRow
+              icon="people-circle-outline"
+              label="Capacidad"
+              value={`${course.maxCapacity} estudiantes`}
+              last
+            />
+          )}
         </View>
 
+        {/* Acciones */}
         <Text style={styles.actionsTitle}>
           Gestión de la cursada
         </Text>
 
-        {/* Ver estudiantes */}
+        {/* Estudiantes */}
         <Pressable
           style={({ pressed }) => [
             styles.actionCard,
@@ -145,7 +264,7 @@ export default function TeacherCourseScreen() {
           />
         </Pressable>
 
-        {/* Tomar asistencia */}
+        {/* Asistencia */}
         <Pressable
           style={({ pressed }) => [
             styles.actionCard,
@@ -180,6 +299,39 @@ export default function TeacherCourseScreen() {
       </ScrollView>
     </View>
   );
+}
+
+function formatShift(
+  shift:
+    | "MORNING"
+    | "AFTERNOON"
+    | "EVENING"
+    | "VIRTUAL"
+    | "MIXED",
+) {
+  const labels = {
+    MORNING: "Mañana",
+    AFTERNOON: "Tarde",
+    EVENING: "Noche",
+    VIRTUAL: "Virtual",
+    MIXED: "Mixto",
+  };
+
+  return labels[shift];
+}
+
+function formatDay(day: number) {
+  const labels: Record<number, string> = {
+    1: "Lunes",
+    2: "Martes",
+    3: "Miércoles",
+    4: "Jueves",
+    5: "Viernes",
+    6: "Sábado",
+    7: "Domingo",
+  };
+
+  return labels[day] ?? `Día ${day}`;
 }
 
 function InfoRow({
@@ -229,6 +381,49 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 25,
     paddingBottom: 35,
+  },
+
+  centerContainer: {
+    flex: 1,
+    backgroundColor: "#F4F7FB",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 30,
+  },
+
+  loadingText: {
+    marginTop: 12,
+    fontSize: 15,
+    color: "#6B7280",
+    textAlign: "center",
+  },
+
+  errorTitle: {
+    fontSize: 19,
+    fontWeight: "800",
+    color: "#1F2937",
+    textAlign: "center",
+  },
+
+  errorText: {
+    marginTop: 8,
+    fontSize: 14,
+    color: "#6B7280",
+    textAlign: "center",
+  },
+
+  retryButton: {
+    marginTop: 20,
+    backgroundColor: "#4070B2",
+    borderRadius: 10,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+  },
+
+  retryButtonText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "700",
   },
 
   backRow: {
@@ -281,6 +476,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     paddingHorizontal: 18,
     paddingTop: 18,
+    paddingBottom: 4,
   },
 
   sectionTitle: {

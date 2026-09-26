@@ -1,49 +1,63 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import type { AttendanceStatus } from "@/features/attendance/attendance.types";
+
 type Props = {
-  present: boolean;
-  onChange: (present: boolean) => void;
+  status: AttendanceStatus;
+  onChange: (status: AttendanceStatus) => void;
 };
 
+const STATUS_OPTIONS: {
+  value: AttendanceStatus;
+  label: string;
+}[] = [
+  {
+    value: "PRESENT",
+    label: "Presente",
+  },
+  {
+    value: "ABSENT",
+    label: "Ausente",
+  },
+  {
+    value: "LATE",
+    label: "Tardanza",
+  },
+  {
+    value: "JUSTIFIED",
+    label: "Justificada",
+  },
+];
+
 export function AttendanceStatusSelector({
-  present,
+  status,
   onChange,
 }: Props) {
   return (
     <View style={styles.container}>
-      <Pressable
-        style={[
-          styles.button,
-          present && styles.presentActive,
-        ]}
-        onPress={() => onChange(true)}
-      >
-        <Text
-          style={[
-            styles.text,
-            present && styles.activeText,
-          ]}
-        >
-          Presente
-        </Text>
-      </Pressable>
+      {STATUS_OPTIONS.map((option) => {
+        const isActive = status === option.value;
 
-      <Pressable
-        style={[
-          styles.button,
-          !present && styles.absentActive,
-        ]}
-        onPress={() => onChange(false)}
-      >
-        <Text
-          style={[
-            styles.text,
-            !present && styles.activeText,
-          ]}
-        >
-          Ausente
-        </Text>
-      </Pressable>
+        return (
+          <Pressable
+            key={option.value}
+            style={[
+              styles.button,
+              isActive && styles.activeButton,
+            ]}
+            onPress={() => onChange(option.value)}
+          >
+            <Text
+              style={[
+                styles.text,
+                isActive && styles.activeText,
+              ]}
+            >
+              {option.label}
+            </Text>
+          </Pressable>
+        );
+      })}
     </View>
   );
 }
@@ -51,6 +65,7 @@ export function AttendanceStatusSelector({
 const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
+    flexWrap: "wrap",
     gap: 8,
   },
 
@@ -61,12 +76,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#F3F4F6",
   },
 
-  presentActive: {
-    backgroundColor: "#D1FAE5",
-  },
-
-  absentActive: {
-    backgroundColor: "#FEE2E2",
+  activeButton: {
+    backgroundColor: "#DBEAFE",
   },
 
   text: {
