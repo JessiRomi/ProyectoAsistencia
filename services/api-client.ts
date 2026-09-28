@@ -1,13 +1,12 @@
-import * as SecureStore from "expo-secure-store";
+import { getToken } from "../lib/storage/secure-storage";
 
 const API_URL = "https://api-gits.innovaweb.com.ar";
-const TOKEN_KEY = "accessToken";
 
 export const apiClient = async <T = unknown>(
   endpoint: string,
   options: RequestInit = {},
 ): Promise<T> => {
-  const token = await SecureStore.getItemAsync(TOKEN_KEY);
+  const token = await getToken();
 
   const response = await fetch(
     `${API_URL}${endpoint}`,

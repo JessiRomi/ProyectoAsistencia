@@ -1,10 +1,10 @@
 import { router } from "expo-router";
 import { Pressable, StyleSheet, Text } from "react-native";
 
-import { useAuth } from "../hooks/use-auth";
+import { useSession } from "../features/auth/useSession";
 
 export default function LogoutButton() {
-  const { logout } = useAuth();
+  const { logout } = useSession();
 
   async function handleLogout() {
     try {

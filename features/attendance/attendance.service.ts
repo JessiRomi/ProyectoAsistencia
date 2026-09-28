@@ -1,5 +1,7 @@
 import { apiClient } from "@/services/api-client";
+
 import type {
+  AttendanceRecord,
   BulkAttendancePayload,
   ClassSession,
   CreateClassSessionPayload,
@@ -35,6 +37,20 @@ export async function getCourseSessions(
   return response.data;
 }
 
+export async function getSessionAttendance(
+  sessionId: string,
+): Promise<AttendanceRecord[]> {
+  const response = await apiClient<{
+    success: boolean;
+    data: AttendanceRecord[];
+    timestamp: string;
+  }>(`/class-sessions/${sessionId}/attendance`, {
+    method: "GET",
+  });
+
+  return response.data;
+}
+
 export async function saveBulkAttendance(
   sessionId: string,
   payload: BulkAttendancePayload,
@@ -60,4 +76,3 @@ export async function closeClassSession(
     method: "PATCH",
   });
 }
-

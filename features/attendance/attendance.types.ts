@@ -33,3 +33,26 @@ export type BulkAttendanceItem = {
 export type BulkAttendancePayload = {
   records: BulkAttendanceItem[];
 };
+
+/**
+ * Registro de asistencia devuelto por:
+ * GET /class-sessions/{id}/attendance
+ */
+export type AttendanceRecord = {
+  id: string;
+  classSessionId: string;
+  studentId: string;
+  status: AttendanceStatus;
+  observation?: string | null;
+  markedAt?: string;
+  markedByTeacherId?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  student: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    studentNumber?: string;
+    documentNumber?: string;
+  };
+};

@@ -5,8 +5,8 @@ import {
   type ReactNode,
 } from "react";
 
-import { authService } from "../services/auth.service";
-import type { User } from "../types/auth";
+import { authService } from "./auth.service";
+import type { User } from "./auth.types";
 
 export interface AuthContextType {
   user: User | null;
@@ -77,7 +77,8 @@ export function AuthProvider({
       password,
     });
 
-    const authenticatedUser = response.data.user;
+    const authenticatedUser =
+      response.data.user;
 
     setUser(authenticatedUser);
 

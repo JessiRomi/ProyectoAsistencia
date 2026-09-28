@@ -13,7 +13,7 @@ import {
   View,
 } from "react-native";
 
-import { useAuth } from "../hooks/use-auth";
+import { useSession } from "../features/auth/useSession";
 
 const ROLE_ROUTES = {
   STUDENT: "/(tabs)",
@@ -23,7 +23,7 @@ const ROLE_ROUTES = {
 } as const;
 
 export default function LoginScreen() {
-  const { login } = useAuth();
+  const { login } = useSession();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

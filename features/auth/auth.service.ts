@@ -1,14 +1,16 @@
-import * as SecureStore from "expo-secure-store";
-
 import type {
   LoginCredentials,
   LoginResponse,
   User,
-} from "../types/auth";
+} from "./auth.types";
 
-import { apiClient } from "./api-client";
+import { apiClient } from "../../services/api-client";
 
-const TOKEN_KEY = "accessToken";
+import {
+  getToken,
+  removeToken,
+  setToken,
+} from "../../lib/storage/secure-storage";
 
 interface AuthMeResponse {
   success: boolean;
@@ -29,10 +31,7 @@ export const authService = {
         },
       );
 
-    await SecureStore.setItemAsync(
-      TOKEN_KEY,
-      response.data.accessToken,
-    );
+    await setToken(response.data.accessToken);
 
     return response;
   },
@@ -50,14 +49,10 @@ export const authService = {
   },
 
   async getToken(): Promise<string | null> {
-    return SecureStore.getItemAsync(
-      TOKEN_KEY,
-    );
+    return getToken();
   },
 
   async logout(): Promise<void> {
-    await SecureStore.deleteItemAsync(
-      TOKEN_KEY,
-    );
+    await removeToken();
   },
 };

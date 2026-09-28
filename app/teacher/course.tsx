@@ -48,6 +48,19 @@ export default function TeacherCourseScreen() {
     });
   }
 
+  function openSessions() {
+    if (!id) {
+      return;
+    }
+
+    router.push({
+      pathname: "/teacher/course-sessions",
+      params: {
+        id,
+      },
+    });
+  }
+
   if (isLoading) {
     return (
       <View style={styles.centerContainer}>
@@ -287,6 +300,39 @@ export default function TeacherCourseScreen() {
 
             <Text style={styles.actionDescription}>
               Ver alumnos y registrar presente o ausente.
+            </Text>
+          </View>
+
+          <Ionicons
+            name="chevron-forward"
+            size={22}
+            color="#9CA3AF"
+          />
+        </Pressable>
+
+        {/* Historial */}
+        <Pressable
+          style={({ pressed }) => [
+            styles.actionCard,
+            pressed && styles.actionCardPressed,
+          ]}
+          onPress={openSessions}
+        >
+          <View style={styles.actionIcon}>
+            <Ionicons
+              name="time-outline"
+              size={27}
+              color="#FFFFFF"
+            />
+          </View>
+
+          <View style={styles.actionContent}>
+            <Text style={styles.actionTitle}>
+              Historial de clases
+            </Text>
+
+            <Text style={styles.actionDescription}>
+              Consultar las sesiones registradas de esta cursada.
             </Text>
           </View>
 

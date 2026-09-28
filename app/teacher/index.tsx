@@ -10,7 +10,7 @@ import {
 
 import { CourseOfferingCard } from "@/components/courses/CourseOfferingCard";
 import { useTeacherCourses } from "@/features/courses/useTeacherCourses";
-import { useAuth } from "@/hooks/use-auth";
+import { useSession } from "@/features/auth/useSession";
 
 export default function TeacherHomeScreen() {
   const {
@@ -20,11 +20,15 @@ export default function TeacherHomeScreen() {
     reload,
   } = useTeacherCourses();
 
-  const { logout } = useAuth();
+  const { logout } = useSession();
 
   async function handleLogout() {
     await logout();
     router.replace("/login");
+  }
+
+  function handleProfile() {
+    router.push("/teacher/profile");
   }
 
   if (isLoading) {
@@ -119,14 +123,25 @@ export default function TeacherHomeScreen() {
                 </Text>
               </View>
 
-              <Pressable
-                style={styles.logoutButton}
-                onPress={handleLogout}
-              >
-                <Text style={styles.logoutButtonText}>
-                  Salir
-                </Text>
-              </Pressable>
+              <View style={styles.headerActions}>
+                <Pressable
+                  style={styles.profileButton}
+                  onPress={handleProfile}
+                >
+                  <Text style={styles.profileButtonText}>
+                    Perfil
+                  </Text>
+                </Pressable>
+
+                <Pressable
+                  style={styles.logoutButton}
+                  onPress={handleLogout}
+                >
+                  <Text style={styles.logoutButtonText}>
+                    Salir
+                  </Text>
+                </Pressable>
+              </View>
             </View>
           </View>
         }
@@ -172,7 +187,13 @@ const styles = StyleSheet.create({
 
   headerText: {
     flex: 1,
-    paddingRight: 15,
+    paddingRight: 12,
+  },
+
+  headerActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
 
   title: {
@@ -241,6 +262,19 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#6B7280",
     textAlign: "center",
+  },
+
+  profileButton: {
+    backgroundColor: "#E8F0FA",
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+  },
+
+  profileButtonText: {
+    color: "#4070B2",
+    fontSize: 13,
+    fontWeight: "700",
   },
 
   logoutButton: {
