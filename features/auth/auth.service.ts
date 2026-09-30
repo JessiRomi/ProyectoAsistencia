@@ -4,7 +4,7 @@ import type {
   User,
 } from "./auth.types";
 
-import { apiClient } from "../../services/api-client";
+import { apiClient } from "../../lib/api/api.client";
 
 import {
   getToken,

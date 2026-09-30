@@ -10,7 +10,7 @@ import {
   View,
 } from "react-native";
 
-import { apiClient } from "../services/api-client";
+import { apiClient } from "../lib/api/api.client"
 
 type AttendanceRecord = {
   id?: string;

@@ -1,4 +1,4 @@
-import { getToken } from "../lib/storage/secure-storage";
+import { getToken } from "../storage/secure-storage";
 
 const API_URL = "https://api-gits.innovaweb.com.ar";
 
