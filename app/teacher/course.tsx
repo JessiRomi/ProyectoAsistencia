@@ -22,6 +22,19 @@ export default function TeacherCourseScreen() {
 
   const course = courses.find((item) => item.id === id);
 
+  function openNewClass() {
+    if (!id) {
+      return;
+    }
+
+    router.push({
+      pathname: "/teacher/new-class",
+      params: {
+        id,
+      },
+    });
+  }
+
   function openAttendance() {
     if (!id) {
       return;
@@ -221,13 +234,14 @@ export default function TeacherCourseScreen() {
             />
           )}
 
-          {course.classroom && !schedule?.classroom && (
-            <InfoRow
-              icon="location-outline"
-              label="Aula"
-              value={course.classroom}
-            />
-          )}
+          {course.classroom &&
+            !schedule?.classroom && (
+              <InfoRow
+                icon="location-outline"
+                label="Aula"
+                value={course.classroom}
+              />
+            )}
 
           {course.maxCapacity !== undefined && (
             <InfoRow
@@ -243,6 +257,39 @@ export default function TeacherCourseScreen() {
         <Text style={styles.actionsTitle}>
           Gestión de la cursada
         </Text>
+
+        {/* Nueva clase */}
+        <Pressable
+          style={({ pressed }) => [
+            styles.actionCard,
+            pressed && styles.actionCardPressed,
+          ]}
+          onPress={openNewClass}
+        >
+          <View style={styles.actionIcon}>
+            <Ionicons
+              name="add-circle-outline"
+              size={27}
+              color="#FFFFFF"
+            />
+          </View>
+
+          <View style={styles.actionContent}>
+            <Text style={styles.actionTitle}>
+              Crear nueva clase
+            </Text>
+
+            <Text style={styles.actionDescription}>
+              Registrar una nueva sesión para esta cursada.
+            </Text>
+          </View>
+
+          <Ionicons
+            name="chevron-forward"
+            size={22}
+            color="#9CA3AF"
+          />
+        </Pressable>
 
         {/* Estudiantes */}
         <Pressable

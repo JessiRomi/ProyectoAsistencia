@@ -56,3 +56,31 @@ export type AttendanceRecord = {
     documentNumber?: string;
   };
 };
+
+/**
+ * Registro de asistencia del estudiante.
+ *
+ * Devuelto por:
+ * GET /students/me/attendance
+ */
+export type StudentAttendanceRecord = {
+  id?: string;
+  date?: string;
+  status?: "PRESENT" | "ABSENT";
+};
+
+/**
+ * Totales de asistencia del estudiante.
+ */
+export type StudentAttendanceTotals = {
+  PRESENT?: number;
+  ABSENT?: number;
+};
+
+/**
+ * Datos de asistencia del estudiante.
+ */
+export type StudentAttendanceResponse = {
+  records: StudentAttendanceRecord[];
+  totals: StudentAttendanceTotals;
+};

@@ -1,91 +1,16 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Stack, router } from "expo-router";
-import { useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  Image,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, View } from "react-native";
 
-import { apiClient } from "../lib/api/api.client"
-
-type AttendanceRecord = {
-  id?: string;
-  date?: string;
-  status?: "PRESENT" | "ABSENT";
-};
-
-type AttendanceTotals = {
-  PRESENT?: number;
-  ABSENT?: number;
-};
-
-type AttendanceResponse = {
-  success: boolean;
-  data: {
-    records: AttendanceRecord[];
-    totals: AttendanceTotals;
-  };
-  timestamp: string;
-};
-
-const SUBJECTS = [
-  "Desarrollo Web",
-  "Desarrollo Móvil",
-  "Gestión de Proyecto",
-];
+import { useStudentAttendance } from "@/features/attendance/useStudentAttendance";
 
 export default function AttendanceHistoryScreen() {
-  const [loading, setLoading] = useState(true);
-  const [records, setRecords] = useState<AttendanceRecord[]>([]);
-  const [totals, setTotals] = useState<AttendanceTotals>({});
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    loadAttendance();
-  }, []);
-
-  async function loadAttendance() {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const response = await apiClient<AttendanceResponse>(
-        "/students/me/attendance",
-        {
-          method: "GET",
-        },
-      );
-
-      console.log(
-        "Respuesta de asistencia:",
-        JSON.stringify(response, null, 2),
-      );
-
-      const attendanceData = response.data;
-
-      setRecords(
-        Array.isArray(attendanceData?.records)
-          ? attendanceData.records
-          : [],
-      );
-
-      setTotals(attendanceData?.totals || {});
-    } catch (error) {
-      console.error("Error consultando asistencia:", error);
-
-      setError(
-        error instanceof Error
-          ? error.message
-          : "No se pudo consultar la asistencia.",
-      );
-    } finally {
-      setLoading(false);
-    }
-  }
+  const {
+    records,
+    totals,
+    isLoading,
+    error,
+  } = useStudentAttendance();
 
   function getStatusText(status?: string) {
     switch (status?.toUpperCase()) {
@@ -114,7 +39,13 @@ export default function AttendanceHistoryScreen() {
   }
 
   function getSubjectName(index: number) {
-    return SUBJECTS[index] || "Asignatura";
+    const subjects = [
+      "Desarrollo Web",
+      "Desarrollo Móvil",
+      "Gestión de Proyecto",
+    ];
+
+    return subjects[index] || "Asignatura";
   }
 
   return (
@@ -142,7 +73,9 @@ export default function AttendanceHistoryScreen() {
             onPress={() => router.back()}
           />
 
-          <Text style={styles.headerTitle}>Mi asistencia</Text>
+          <Text style={styles.headerTitle}>
+            Mi asistencia
+          </Text>
         </View>
 
         <ScrollView
@@ -151,7 +84,9 @@ export default function AttendanceHistoryScreen() {
         >
           {/* TÍTULO */}
           <View style={styles.introduction}>
-            <Text style={styles.title}>Historial de asistencia</Text>
+            <Text style={styles.title}>
+              Historial de asistencia
+            </Text>
 
             <Text style={styles.subtitle}>
               Consultá tus registros de asistencia a clases.
@@ -159,9 +94,12 @@ export default function AttendanceHistoryScreen() {
           </View>
 
           {/* CARGANDO */}
-          {loading && (
+          {isLoading && (
             <View style={styles.centerContainer}>
-              <ActivityIndicator size="large" color="#4070B2" />
+              <ActivityIndicator
+                size="large"
+                color="#4070B2"
+              />
 
               <Text style={styles.loadingText}>
                 Consultando asistencia...
@@ -170,7 +108,7 @@ export default function AttendanceHistoryScreen() {
           )}
 
           {/* ERROR */}
-          {!loading && error && (
+          {!isLoading && error && (
             <View style={styles.messageCard}>
               <Ionicons
                 name="alert-circle-outline"
@@ -182,14 +120,18 @@ export default function AttendanceHistoryScreen() {
                 Ocurrió un problema
               </Text>
 
-              <Text style={styles.messageText}>{error}</Text>
+              <Text style={styles.messageText}>
+                {error}
+              </Text>
             </View>
           )}
 
           {/* RESUMEN */}
-          {!loading && !error && (
+          {!isLoading && !error && (
             <View style={styles.summaryCard}>
-              <Text style={styles.summaryTitle}>Resumen</Text>
+              <Text style={styles.summaryTitle}>
+                Resumen
+              </Text>
 
               <View style={styles.summaryRow}>
                 {/* PRESENTES */}
@@ -197,7 +139,9 @@ export default function AttendanceHistoryScreen() {
                   <View
                     style={[
                       styles.summaryIcon,
-                      { backgroundColor: "#EAF1FA" },
+                      {
+                        backgroundColor: "#EAF1FA",
+                      },
                     ]}
                   >
                     <Ionicons
@@ -210,7 +154,9 @@ export default function AttendanceHistoryScreen() {
                   <Text
                     style={[
                       styles.summaryNumber,
-                      { color: "#4070B2" },
+                      {
+                        color: "#4070B2",
+                      },
                     ]}
                   >
                     {totals.PRESENT ?? 0}
@@ -228,7 +174,9 @@ export default function AttendanceHistoryScreen() {
                   <View
                     style={[
                       styles.summaryIcon,
-                      { backgroundColor: "#FEECEC" },
+                      {
+                        backgroundColor: "#FEECEC",
+                      },
                     ]}
                   >
                     <Ionicons
@@ -241,7 +189,9 @@ export default function AttendanceHistoryScreen() {
                   <Text
                     style={[
                       styles.summaryNumber,
-                      { color: "#DC2626" },
+                      {
+                        color: "#DC2626",
+                      },
                     ]}
                   >
                     {totals.ABSENT ?? 0}
@@ -256,87 +206,91 @@ export default function AttendanceHistoryScreen() {
           )}
 
           {/* SIN REGISTROS */}
-          {!loading && !error && records.length === 0 && (
-            <View style={styles.messageCard}>
-              <View style={styles.emptyIcon}>
-                <Ionicons
-                  name="calendar-outline"
-                  size={32}
-                  color="#4070B2"
-                />
+          {!isLoading &&
+            !error &&
+            records.length === 0 && (
+              <View style={styles.messageCard}>
+                <View style={styles.emptyIcon}>
+                  <Ionicons
+                    name="calendar-outline"
+                    size={32}
+                    color="#4070B2"
+                  />
+                </View>
+
+                <Text style={styles.messageTitle}>
+                  Sin registros
+                </Text>
+
+                <Text style={styles.messageText}>
+                  Todavía no hay registros de asistencia
+                  para mostrar.
+                </Text>
               </View>
-
-              <Text style={styles.messageTitle}>
-                Sin registros
-              </Text>
-
-              <Text style={styles.messageText}>
-                Todavía no hay registros de asistencia para
-                mostrar.
-              </Text>
-            </View>
-          )}
+            )}
 
           {/* REGISTROS */}
-          {!loading && !error && records.length > 0 && (
-            <View style={styles.recordsContainer}>
-              <Text style={styles.recordsTitle}>
-                Registros
-              </Text>
+          {!isLoading &&
+            !error &&
+            records.length > 0 && (
+              <View style={styles.recordsContainer}>
+                <Text style={styles.recordsTitle}>
+                  Registros
+                </Text>
 
-              {records.map((record, index) => (
-                <View
-                  key={record.id ?? index}
-                  style={styles.recordCard}
-                >
-                  <View style={styles.recordIcon}>
-                    <Ionicons
-                      name="calendar-outline"
-                      size={23}
-                      color="#FFFFFF"
-                    />
-                  </View>
-
-                  <View style={styles.recordContent}>
-                    <Text style={styles.recordSubject}>
-                      {getSubjectName(index)}
-                    </Text>
-
-                    {record.date && (
-                      <Text style={styles.recordDate}>
-                        {record.date}
-                      </Text>
-                    )}
-                  </View>
-
+                {records.map((record, index) => (
                   <View
-                    style={[
-                      styles.statusBadge,
-                      {
-                        backgroundColor:
-                          record.status === "PRESENT"
-                            ? "#EAF1FA"
-                            : "#FEECEC",
-                      },
-                    ]}
+                    key={record.id ?? index}
+                    style={styles.recordCard}
                   >
-                    <Text
+                    <View style={styles.recordIcon}>
+                      <Ionicons
+                        name="calendar-outline"
+                        size={23}
+                        color="#FFFFFF"
+                      />
+                    </View>
+
+                    <View style={styles.recordContent}>
+                      <Text style={styles.recordSubject}>
+                        {getSubjectName(index)}
+                      </Text>
+
+                      {record.date && (
+                        <Text style={styles.recordDate}>
+                          {record.date}
+                        </Text>
+                      )}
+                    </View>
+
+                    <View
                       style={[
-                        styles.recordStatus,
+                        styles.statusBadge,
                         {
-                          color: getStatusColor(
-                            record.status,
-                          ),
+                          backgroundColor:
+                            record.status === "PRESENT"
+                              ? "#EAF1FA"
+                              : "#FEECEC",
                         },
                       ]}
                     >
-                      {getStatusText(record.status)}
-                    </Text>
+                      <Text
+                        style={[
+                          styles.recordStatus,
+                          {
+                            color: getStatusColor(
+                              record.status,
+                            ),
+                          },
+                        ]}
+                      >
+                        {getStatusText(record.status)}
+                      </Text>
+                    </View>
                   </View>
-                </View>
-              ))}
-            </View>
-          )}
+                ))}
+              </View>
+            )}
         </ScrollView>
       </View>
     </>

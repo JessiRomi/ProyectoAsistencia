@@ -5,6 +5,7 @@ import type {
   BulkAttendancePayload,
   ClassSession,
   CreateClassSessionPayload,
+  StudentAttendanceResponse,
 } from "./attendance.types";
 
 export async function createClassSession(
@@ -75,4 +76,19 @@ export async function closeClassSession(
   }>(`/class-sessions/${sessionId}/close`, {
     method: "PATCH",
   });
+}
+
+/**
+ * Obtiene el historial de asistencia del estudiante autenticado.
+ */
+export async function getMyAttendance(): Promise<StudentAttendanceResponse> {
+  const response = await apiClient<{
+    success: boolean;
+    data: StudentAttendanceResponse;
+    timestamp: string;
+  }>("/students/me/attendance", {
+    method: "GET",
+  });
+
+  return response.data;
 }

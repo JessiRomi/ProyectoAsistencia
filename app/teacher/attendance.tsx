@@ -1,5 +1,10 @@
 import { router, useLocalSearchParams } from "expo-router";
-import { useEffect, useState } from "react";
+
+import React, {
+  useEffect,
+  useState,
+} from "react";
+
 import {
   ActivityIndicator,
   Alert,
@@ -10,133 +15,159 @@ import {
   View,
 } from "react-native";
 
-import { AttendanceStatusSelector } from "@/components/attendance/AttendanceStatusSelector";
+import {
+  AttendanceStatusSelector,
+} from "@/components/attendance/AttendanceStatusSelector";
+
 import { useCourseStudents } from "@/features/courses/useCourseStudents";
 import { useTeacherCourses } from "@/features/courses/useTeacherCourses";
 import { useAttendance } from "@/features/attendance/useAttendance";
+
 import type { AttendanceStatus } from "@/features/attendance/attendance.types";
 
-type AttendanceState = Record<string, AttendanceStatus>;
+type AttendanceState = Record<
+  string,
+  AttendanceStatus
+>;
 
-export default function AttendanceScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+export default function TeacherAttendanceScreen() {
+  const params = useLocalSearchParams<{
+    id?: string;
+    sessionId?: string;
+  }>();
+
+  const id = params.id;
+  const sessionId = params.sessionId;
+
+  const {
+    courses,
+    isLoading: isLoadingCourses,
+  } = useTeacherCourses();
+
+  const course = courses.find(
+    (item) => item.id === id,
+  );
 
   const {
     students,
-    isLoading: studentsLoading,
+    isLoading: isLoadingStudents,
     error: studentsError,
     reload: reloadStudents,
   } = useCourseStudents(id);
 
   const {
-    courses,
-    isLoading: coursesLoading,
-  } = useTeacherCourses();
-
-  const {
+    saveAttendanceForSession,
     saveAttendance,
     isSaving,
     error: attendanceError,
-    clearError,
   } = useAttendance();
 
   const [attendance, setAttendance] =
     useState<AttendanceState>({});
 
-  const course = courses.find((item) => item.id === id);
-
   useEffect(() => {
-    if (students.length === 0) {
-      setAttendance({});
+    if (!students.length) {
       return;
     }
 
-    setAttendance((current) => {
-      const next: AttendanceState = {};
+    const initialState: AttendanceState = {};
 
-      students.forEach((student) => {
-        next[student.id] =
-          current[student.id] ?? "ABSENT";
-      });
-
-      return next;
+    students.forEach((student) => {
+      initialState[student.id] = "ABSENT";
     });
+
+    setAttendance(initialState);
   }, [students]);
 
-  const presentCount = students.filter(
-    (student) => attendance[student.id] === "PRESENT",
-  ).length;
-
-  const absentCount = students.filter(
-    (student) => attendance[student.id] === "ABSENT",
-  ).length;
-
-  const lateCount = students.filter(
-    (student) => attendance[student.id] === "LATE",
-  ).length;
-
-  const justifiedCount = students.filter(
-    (student) => attendance[student.id] === "JUSTIFIED",
-  ).length;
-
-  function updateAttendance(
+  function handleStatusChange(
     studentId: string,
     status: AttendanceStatus,
   ) {
-    clearError();
-
     setAttendance((current) => ({
       ...current,
       [studentId]: status,
     }));
   }
 
-  function markEveryonePresent() {
-    const allPresent: AttendanceState = {};
-
-    students.forEach((student) => {
-      allPresent[student.id] = "PRESENT";
-    });
-
-    setAttendance(allPresent);
-    clearError();
-  }
-
   async function handleSaveAttendance() {
     if (!id) {
+      Alert.alert(
+        "Error",
+        "No se encontró la cursada.",
+      );
       return;
     }
 
-    try {
-      const records = students.map((student) => ({
-        studentId: student.id,
-        status: attendance[student.id] ?? "ABSENT",
-      }));
+    if (!students.length) {
+      Alert.alert(
+        "Sin estudiantes",
+        "No hay estudiantes para registrar.",
+      );
+      return;
+    }
 
-      await saveAttendance(id, records);
+    const records = students.map((student) => ({
+      studentId: student.id,
+      status:
+        attendance[student.id] ?? "ABSENT",
+    }));
+
+    try {
+      /*
+       * Si llegamos desde "Crear nueva clase",
+       * usamos exactamente la sesión creada.
+       */
+      if (sessionId) {
+        await saveAttendanceForSession(
+          sessionId,
+          records,
+        );
+      } else {
+        /*
+         * Mantenemos el flujo anterior para no romper
+         * la pantalla si se accede directamente.
+         */
+        await saveAttendance(
+          id,
+          records,
+        );
+      }
 
       Alert.alert(
         "Asistencia guardada",
-        "La asistencia se guardó correctamente.",
+        "La asistencia se registró correctamente.",
         [
           {
             text: "Aceptar",
-            onPress: () => router.back(),
+            onPress: () => {
+              router.back();
+            },
           },
         ],
       );
-    } catch {
-      // El error ya es gestionado por useAttendance.
+    } catch (error) {
+      console.error(
+        "Error guardando asistencia:",
+        error,
+      );
+
+      Alert.alert(
+        "Error",
+        error instanceof Error
+          ? error.message
+          : attendanceError ||
+              "No se pudo guardar la asistencia.",
+      );
     }
   }
 
-  if (studentsLoading || coursesLoading) {
+  if (
+    isLoadingCourses ||
+    isLoadingStudents
+  ) {
     return (
-      <View style={styles.centerContainer}>
-        <ActivityIndicator
-          size="large"
-          color="#4070B2"
-        />
+      <View style={styles.center}>
+        <ActivityIndicator size="large" />
 
         <Text style={styles.loadingText}>
           Cargando estudiantes...
@@ -145,13 +176,19 @@ export default function AttendanceScreen() {
     );
   }
 
+  if (!id) {
+    return (
+      <View style={styles.center}>
+        <Text style={styles.errorText}>
+          No se encontró la cursada.
+        </Text>
+      </View>
+    );
+  }
+
   if (studentsError) {
     return (
-      <View style={styles.centerContainer}>
-        <Text style={styles.errorTitle}>
-          No se pudieron cargar los estudiantes
-        </Text>
-
+      <View style={styles.center}>
         <Text style={styles.errorText}>
           {studentsError}
         </Text>
@@ -164,212 +201,108 @@ export default function AttendanceScreen() {
             Reintentar
           </Text>
         </Pressable>
-
-        <Pressable
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
-          <Text style={styles.backButtonText}>
-            Volver
-          </Text>
-        </Pressable>
-      </View>
-    );
-  }
-
-  if (!id) {
-    return (
-      <View style={styles.centerContainer}>
-        <Text style={styles.errorTitle}>
-          Cursada no seleccionada
-        </Text>
-
-        <Text style={styles.errorText}>
-          No se recibió el identificador de la cursada.
-        </Text>
-
-        <Pressable
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
-          <Text style={styles.backButtonText}>
-            Volver
-          </Text>
-        </Pressable>
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      {/* Encabezado */}
       <View style={styles.header}>
-        <Pressable
-          style={styles.backRow}
-          onPress={() => router.back()}
-        >
-          <Text style={styles.backIcon}>‹</Text>
-
-          <Text style={styles.backText}>
-            Volver
-          </Text>
-        </Pressable>
-
         <Text style={styles.title}>
           Tomar asistencia
         </Text>
 
-        <Text style={styles.subtitle}>
-          {course
-            ? `${course.subject.name} · Comisión ${course.commission}`
-            : "Cursada seleccionada"}
+        <Text style={styles.courseName}>
+          {course?.subject?.name ??
+            "Curso seleccionado"}
         </Text>
+
+        {sessionId ? (
+          <Text style={styles.sessionInfo}>
+            Nueva clase
+          </Text>
+        ) : null}
       </View>
 
-      {/* Resumen */}
-      <View style={styles.summary}>
-        <View style={styles.summaryItem}>
-          <Text style={styles.summaryNumber}>
-            {presentCount}
-          </Text>
+      <FlatList
+        data={students}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={
+          styles.listContent
+        }
+        renderItem={({ item }) => (
+          <View style={styles.studentCard}>
+            <View
+              style={styles.studentInfo}
+            >
+              <Text style={styles.studentName}>
+                {item.firstName}{" "}
+                {item.lastName}
+              </Text>
 
-          <Text style={styles.summaryLabel}>
-            Presentes
-          </Text>
-        </View>
+              {item.studentNumber ? (
+                <Text
+                  style={
+                    styles.studentNumber
+                  }
+                >
+                  Legajo:{" "}
+                  {item.studentNumber}
+                </Text>
+              ) : null}
+            </View>
 
-        <View style={styles.divider} />
+            <AttendanceStatusSelector
+              status={
+                attendance[item.id] ??
+                "ABSENT"
+              }
+              onChange={(status) =>
+                handleStatusChange(
+                  item.id,
+                  status,
+                )
+              }
+            />
+          </View>
+        )}
+        ListEmptyComponent={
+          <View
+            style={styles.emptyContainer}
+          >
+            <Text
+              style={styles.emptyText}
+            >
+              No hay estudiantes registrados
+              en esta cursada.
+            </Text>
+          </View>
+        }
+      />
 
-        <View style={styles.summaryItem}>
-          <Text style={styles.summaryNumber}>
-            {absentCount}
-          </Text>
-
-          <Text style={styles.summaryLabel}>
-            Ausentes
-          </Text>
-        </View>
-
-        <View style={styles.divider} />
-
-        <View style={styles.summaryItem}>
-          <Text style={styles.summaryNumber}>
-            {lateCount}
-          </Text>
-
-          <Text style={styles.summaryLabel}>
-            Tardanzas
-          </Text>
-        </View>
-
-        <View style={styles.divider} />
-
-        <View style={styles.summaryItem}>
-          <Text style={styles.summaryNumber}>
-            {justifiedCount}
-          </Text>
-
-          <Text style={styles.summaryLabel}>
-            Justificadas
-          </Text>
-        </View>
-      </View>
-
-      {/* Error al guardar */}
-      {attendanceError && (
-        <View style={styles.attendanceError}>
-          <Text style={styles.attendanceErrorText}>
-            {attendanceError}
-          </Text>
-        </View>
-      )}
-
-      {/* Marcar todos */}
-      {students.length > 0 && (
+      <View style={styles.footer}>
         <Pressable
-          style={styles.allPresentButton}
-          onPress={markEveryonePresent}
+          style={[
+            styles.saveButton,
+            isSaving &&
+              styles.saveButtonDisabled,
+          ]}
+          onPress={handleSaveAttendance}
           disabled={isSaving}
         >
-          <Text style={styles.allPresentText}>
-            Marcar todos presentes
-          </Text>
-        </Pressable>
-      )}
-
-      {/* Sin estudiantes */}
-      {students.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyTitle}>
-            No hay estudiantes inscriptos
-          </Text>
-
-          <Text style={styles.emptyText}>
-            Esta cursada no tiene estudiantes registrados.
-          </Text>
-        </View>
-      ) : (
-        <FlatList
-          data={students}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.list}
-          showsVerticalScrollIndicator={false}
-          renderItem={({ item }) => (
-            <View style={styles.studentCard}>
-              <View style={styles.studentInfo}>
-                <View style={styles.avatar}>
-                  <Text style={styles.avatarText}>
-                    {item.firstName.charAt(0)}
-                    {item.lastName.charAt(0)}
-                  </Text>
-                </View>
-
-                <View style={styles.nameContainer}>
-                  <Text style={styles.studentName}>
-                    {item.firstName} {item.lastName}
-                  </Text>
-                </View>
-              </View>
-
-              <AttendanceStatusSelector
-                status={
-                  attendance[item.id] ?? "ABSENT"
-                }
-                onChange={(status) =>
-                  updateAttendance(
-                    item.id,
-                    status,
-                  )
-                }
-              />
-            </View>
+          {isSaving ? (
+            <ActivityIndicator
+              color="#ffffff"
+            />
+          ) : (
+            <Text
+              style={styles.saveButtonText}
+            >
+              Guardar asistencia
+            </Text>
           )}
-        />
-      )}
-
-      {/* Guardar */}
-      {students.length > 0 && (
-        <View style={styles.footer}>
-          <Pressable
-            style={[
-              styles.saveButton,
-              isSaving && styles.saveButtonDisabled,
-            ]}
-            onPress={handleSaveAttendance}
-            disabled={isSaving}
-          >
-            {isSaving ? (
-              <ActivityIndicator
-                color="#FFFFFF"
-              />
-            ) : (
-              <Text style={styles.saveButtonText}>
-                Guardar asistencia
-              </Text>
-            )}
-          </Pressable>
-        </View>
-      )}
+        </Pressable>
+      </View>
     </View>
   );
 }
@@ -377,233 +310,92 @@ export default function AttendanceScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F5F7FA",
+    backgroundColor: "#f7f8fa",
   },
 
-  centerContainer: {
+  center: {
     flex: 1,
-    backgroundColor: "#F5F7FA",
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 30,
+    padding: 24,
   },
 
   loadingText: {
     marginTop: 12,
-    fontSize: 15,
-    color: "#6B7280",
-  },
-
-  errorTitle: {
-    fontSize: 19,
-    fontWeight: "800",
-    color: "#1F2937",
-    textAlign: "center",
+    fontSize: 16,
+    color: "#555",
   },
 
   errorText: {
-    marginTop: 8,
-    fontSize: 14,
-    color: "#6B7280",
+    fontSize: 16,
+    color: "#c62828",
     textAlign: "center",
-  },
-
-  retryButton: {
-    marginTop: 20,
-    backgroundColor: "#4070B2",
-    borderRadius: 10,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-  },
-
-  retryButtonText: {
-    color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: "700",
-  },
-
-  backButton: {
-    marginTop: 12,
-    backgroundColor: "#E5E7EB",
-    borderRadius: 10,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-  },
-
-  backButtonText: {
-    color: "#374151",
-    fontSize: 14,
-    fontWeight: "700",
+    marginBottom: 16,
   },
 
   header: {
     paddingHorizontal: 20,
-    paddingTop: 45,
-    paddingBottom: 15,
-  },
-
-  backRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 20,
-  },
-
-  backIcon: {
-    fontSize: 35,
-    lineHeight: 30,
-    color: "#4070B2",
-    marginRight: 8,
-  },
-
-  backText: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#4070B2",
+    paddingTop: 20,
+    paddingBottom: 12,
   },
 
   title: {
-    fontSize: 27,
-    fontWeight: "800",
-    color: "#1F2937",
-  },
-
-  subtitle: {
-    marginTop: 5,
-    fontSize: 14,
-    color: "#6B7280",
-  },
-
-  summary: {
-    marginHorizontal: 20,
-    marginBottom: 12,
-    padding: 12,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-around",
-  },
-
-  summaryItem: {
-    alignItems: "center",
-    flex: 1,
-  },
-
-  summaryNumber: {
-    fontSize: 22,
-    fontWeight: "800",
-    color: "#1F2937",
-  },
-
-  summaryLabel: {
-    marginTop: 3,
-    fontSize: 11,
-    color: "#6B7280",
-    textAlign: "center",
-  },
-
-  divider: {
-    width: 1,
-    height: 35,
-    backgroundColor: "#E5E7EB",
-  },
-
-  attendanceError: {
-    marginHorizontal: 20,
-    marginBottom: 10,
-    padding: 12,
-    borderRadius: 10,
-    backgroundColor: "#FEE2E2",
-  },
-
-  attendanceErrorText: {
-    color: "#991B1B",
-    fontSize: 13,
-    fontWeight: "600",
-    textAlign: "center",
-  },
-
-  allPresentButton: {
-    marginHorizontal: 20,
-    marginBottom: 10,
-    paddingVertical: 12,
-    alignItems: "center",
-    borderRadius: 12,
-    backgroundColor: "#E8F0FB",
-  },
-
-  allPresentText: {
-    fontSize: 14,
+    fontSize: 26,
     fontWeight: "700",
-    color: "#4070B2",
+    color: "#111827",
   },
 
-  list: {
+  courseName: {
+    marginTop: 6,
+    fontSize: 16,
+    color: "#4b5563",
+  },
+
+  sessionInfo: {
+    marginTop: 4,
+    fontSize: 14,
+    color: "#2563eb",
+    fontWeight: "600",
+  },
+
+  listContent: {
     paddingHorizontal: 20,
-    paddingBottom: 110,
-    gap: 10,
+    paddingBottom: 120,
   },
 
   studentCard: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "#ffffff",
     borderRadius: 16,
-    padding: 14,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
   },
 
   studentInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-    flex: 1,
-    marginRight: 10,
-  },
-
-  avatar: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: "#E8F0FB",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  avatarText: {
-    fontSize: 14,
-    fontWeight: "800",
-    color: "#4070B2",
-  },
-
-  nameContainer: {
-    flex: 1,
-    marginLeft: 11,
+    marginBottom: 12,
   },
 
   studentName: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#1F2937",
+    fontSize: 17,
+    fontWeight: "600",
+    color: "#111827",
+  },
+
+  studentNumber: {
+    marginTop: 4,
+    fontSize: 13,
+    color: "#6b7280",
   },
 
   emptyContainer: {
-    flex: 1,
+    paddingVertical: 40,
     alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 30,
-  },
-
-  emptyTitle: {
-    fontSize: 19,
-    fontWeight: "800",
-    color: "#1F2937",
-    textAlign: "center",
   },
 
   emptyText: {
-    marginTop: 8,
-    fontSize: 14,
-    color: "#6B7280",
+    fontSize: 15,
+    color: "#6b7280",
     textAlign: "center",
   },
 
@@ -612,27 +404,41 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    padding: 16,
-    backgroundColor: "#FFFFFF",
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 20,
+    backgroundColor: "#ffffff",
     borderTopWidth: 1,
-    borderTopColor: "#E5E7EB",
+    borderTopColor: "#e5e7eb",
   },
 
   saveButton: {
-    paddingVertical: 15,
-    borderRadius: 13,
+    height: 52,
+    borderRadius: 14,
     alignItems: "center",
-    backgroundColor: "#4070B2",
+    justifyContent: "center",
+    backgroundColor: "#111827",
   },
 
   saveButtonDisabled: {
-    opacity: 0.7,
+    opacity: 0.6,
   },
 
   saveButtonText: {
-    fontSize: 15,
-    fontWeight: "800",
-    color: "#FFFFFF",
+    color: "#ffffff",
+    fontSize: 16,
+    fontWeight: "700",
+  },
+
+  retryButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 10,
+    backgroundColor: "#111827",
+  },
+
+  retryButtonText: {
+    color: "#ffffff",
+    fontWeight: "600",
   },
 });
-
