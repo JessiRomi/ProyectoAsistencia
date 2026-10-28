@@ -1,37 +1,43 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Stack, router } from "expo-router";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import GeometricActionButton from "@/components/attendance/GeometricActionButton";
 
 export default function AttendanceScreen() {
   return (
     <>
-      {/* Oculta el encabezado automático de Expo Router */}
-      <Stack.Screen
-        options={{
-          headerShown: false,
-        }}
-      />
+      <Stack.Screen options={{ headerShown: false }} />
 
       <View style={styles.container}>
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          {/* ENCABEZADO */}
           <View style={styles.header}>
-            <Pressable onPress={() => router.back()} style={styles.backButton}>
+            <Pressable
+              onPress={() => router.back()}
+              style={styles.backButton}
+              accessibilityLabel="Volver"
+            >
               <Ionicons name="arrow-back" size={28} color="#1F2937" />
             </Pressable>
-
             <Text style={styles.headerTitle}>Asistencia</Text>
           </View>
 
           <View style={styles.introduction}>
             <Text style={styles.mainTitle}>¿Qué querés hacer?</Text>
-
             <Text style={styles.subtitle}>
               Gestioná la asistencia de tus clases.
             </Text>
+          </View>
+
+          {/* ESCANEAR QR */}
+          <View style={{ marginHorizontal: 22, marginBottom: 22 }}>
+            <GeometricActionButton
+              label="ESCANEAR QR"
+              icon="camera-outline"
+              onPress={() => router.push("/qr-scanner")}
+            />
           </View>
 
           {/* CONSULTAR ASISTENCIA */}
@@ -41,29 +47,25 @@ export default function AttendanceScreen() {
               pressed && styles.cardPressed,
             ]}
             onPress={() => router.push("/attendance-history")}
+            accessibilityRole="button"
           >
-            <View style={styles.cardIcon}>
+            <View style={styles.historyIcon}>
               <Ionicons name="calendar-outline" size={30} color="#FFFFFF" />
             </View>
-
             <View style={styles.cardContent}>
               <Text style={styles.cardTitle}>Consultar asistencia</Text>
-
               <Text style={styles.cardDescription}>
                 Consultá el historial de asistencia.
               </Text>
             </View>
-
             <Ionicons name="chevron-forward" size={25} color="#9CA3AF" />
           </Pressable>
 
           {/* INFORMACIÓN DEL USUARIO */}
           <View style={styles.userCard}>
             <Ionicons name="person-circle-outline" size={27} color="#4070B2" />
-
             <View style={styles.userContent}>
               <Text style={styles.userLabel}>Usuario</Text>
-
               <Text style={styles.userRole}>Estudiante</Text>
             </View>
           </View>
@@ -78,12 +80,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#F4F7FB",
   },
-
   scrollContent: {
     paddingBottom: 40,
   },
-
-  /* ENCABEZADO */
 
   header: {
     height: 95,
@@ -109,12 +108,10 @@ const styles = StyleSheet.create({
     color: "#1F2937",
   },
 
-  /* INTRODUCCIÓN */
-
   introduction: {
     paddingHorizontal: 28,
-    paddingTop: 48,
-    paddingBottom: 32,
+    paddingTop: 40,
+    paddingBottom: 28,
   },
 
   mainTitle: {
@@ -130,24 +127,18 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
 
-  /* TARJETA */
-
   card: {
-    marginHorizontal: 28,
+    marginHorizontal: 24,
+    marginBottom: 14,
     backgroundColor: "#FFFFFF",
     borderRadius: 18,
-    padding: 20,
+    padding: 18,
     flexDirection: "row",
     alignItems: "center",
-
     shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 8,
-
     elevation: 3,
   },
 
@@ -155,14 +146,14 @@ const styles = StyleSheet.create({
     opacity: 0.8,
   },
 
-  cardIcon: {
+  historyIcon: {
     width: 62,
     height: 62,
     borderRadius: 17,
     backgroundColor: "#9DC45B",
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 18,
+    marginRight: 16,
   },
 
   cardContent: {
@@ -170,23 +161,21 @@ const styles = StyleSheet.create({
   },
 
   cardTitle: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: "800",
     color: "#1F2937",
     marginBottom: 5,
   },
 
   cardDescription: {
-    fontSize: 14,
+    fontSize: 13,
     color: "#6B7280",
-    lineHeight: 20,
+    lineHeight: 19,
   },
 
-  /* USUARIO */
-
   userCard: {
-    marginHorizontal: 28,
-    marginTop: 36,
+    marginHorizontal: 24,
+    marginTop: 22,
     backgroundColor: "#FFFFFF",
     borderRadius: 16,
     padding: 20,

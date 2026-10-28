@@ -1,9 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
-import {
-  Stack,
-  router,
-  useLocalSearchParams,
-} from "expo-router";
+import { Stack, router, useLocalSearchParams } from "expo-router";
+import GeometricActionButton from "@/components/attendance/GeometricActionButton";
+
 import {
   ActivityIndicator,
   FlatList,
@@ -77,28 +75,22 @@ function getStatusStyles(status: AttendanceStatus) {
   }
 }
 
-function StudentAttendanceCard({
-  record,
-}: {
-  record: AttendanceRecord;
-}) {
+function StudentAttendanceCard({ record }: { record: AttendanceRecord }) {
   const statusStyles = getStatusStyles(record.status);
 
-  const initials = `${record.student.firstName.charAt(0)}${record.student.lastName.charAt(0)}`.toUpperCase();
+  const initials =
+    `${record.student.firstName.charAt(0)}${record.student.lastName.charAt(0)}`.toUpperCase();
 
   return (
     <View style={styles.studentCard}>
       <View style={styles.studentInfo}>
         <View style={styles.avatar}>
-          <Text style={styles.avatarText}>
-            {initials}
-          </Text>
+          <Text style={styles.avatarText}>{initials}</Text>
         </View>
 
         <View style={styles.studentData}>
           <Text style={styles.studentName}>
-            {record.student.firstName}{" "}
-            {record.student.lastName}
+            {record.student.firstName} {record.student.lastName}
           </Text>
 
           {record.student.studentNumber ? (
@@ -109,39 +101,23 @@ function StudentAttendanceCard({
         </View>
       </View>
 
-      <View
-        style={[
-          styles.statusBadge,
-          statusStyles.badge,
-        ]}
-      >
+      <View style={[styles.statusBadge, statusStyles.badge]}>
         <Ionicons
           name={statusStyles.icon}
           size={16}
           color={statusStyles.text.color}
         />
 
-        <Text
-          style={[
-            styles.statusText,
-            statusStyles.text,
-          ]}
-        >
+        <Text style={[styles.statusText, statusStyles.text]}>
           {getStatusLabel(record.status)}
         </Text>
       </View>
 
       {record.observation ? (
         <View style={styles.observationContainer}>
-          <Ionicons
-            name="chatbubble-outline"
-            size={16}
-            color="#64748B"
-          />
+          <Ionicons name="chatbubble-outline" size={16} color="#64748B" />
 
-          <Text style={styles.observation}>
-            {record.observation}
-          </Text>
+          <Text style={styles.observation}>{record.observation}</Text>
         </View>
       ) : null}
     </View>
@@ -149,19 +125,10 @@ function StudentAttendanceCard({
 }
 
 export default function SessionAttendanceScreen() {
-  const params =
-    useLocalSearchParams<{ id: string }>();
-
-  const sessionId = Array.isArray(params.id)
-    ? params.id[0]
-    : params.id;
-
-  const {
-    attendance,
-    isLoading,
-    error,
-    reload,
-  } = useSessionAttendance(sessionId);
+  const params = useLocalSearchParams<{ id: string }>();
+  const sessionId = Array.isArray(params.id) ? params.id[0] : params.id;
+  const { attendance, isLoading, error, reload } =
+    useSessionAttendance(sessionId);
 
   const presentCount = attendance.filter(
     (record) => record.status === "PRESENT",
@@ -189,90 +156,63 @@ export default function SessionAttendanceScreen() {
 
       <View style={styles.container}>
         <View style={styles.header}>
-          <Pressable
-            style={styles.backButton}
-            onPress={() => router.back()}
-          >
-            <Ionicons
-              name="arrow-back"
-              size={24}
-              color="#0F172A"
-            />
+          <Pressable style={styles.backButton} onPress={() => router.back()}>
+            <Ionicons name="arrow-back" size={24} color="#0F172A" />
           </Pressable>
 
           <View style={styles.headerContent}>
-            <Text style={styles.title}>
-              Detalle de asistencia
-            </Text>
+            <Text style={styles.title}>Detalle de asistencia</Text>
 
-            <Text style={styles.subtitle}>
-              Asistencia registrada
-            </Text>
+            <Text style={styles.subtitle}>Asistencia registrada</Text>
           </View>
         </View>
 
+        <GeometricActionButton
+          label="GENERAR QR DE ASISTENCIA"
+          icon="qr-code-outline"
+          onPress={() =>
+            router.push({
+              pathname: "/teacher/session-qr",
+              params: { id: sessionId },
+            })
+          }
+        />
+
         {isLoading ? (
           <View style={styles.centerContent}>
-            <ActivityIndicator
-              size="large"
-              color="#0E6FB8"
-            />
+            <ActivityIndicator size="large" color="#0E6FB8" />
 
-            <Text style={styles.loadingText}>
-              Cargando asistencia...
-            </Text>
+            <Text style={styles.loadingText}>Cargando asistencia...</Text>
           </View>
         ) : error ? (
           <View style={styles.centerContent}>
-            <Ionicons
-              name="alert-circle-outline"
-              size={42}
-              color="#DC2626"
-            />
+            <Ionicons name="alert-circle-outline" size={42} color="#DC2626" />
 
             <Text style={styles.errorTitle}>
               No se pudo cargar la asistencia
             </Text>
 
-            <Text style={styles.errorText}>
-              {error}
-            </Text>
+            <Text style={styles.errorText}>{error}</Text>
 
-            <Pressable
-              style={styles.retryButton}
-              onPress={reload}
-            >
-              <Text style={styles.retryButtonText}>
-                Reintentar
-              </Text>
+            <Pressable style={styles.retryButton} onPress={reload}>
+              <Text style={styles.retryButtonText}>Reintentar</Text>
             </Pressable>
           </View>
         ) : attendance.length === 0 ? (
           <View style={styles.centerContent}>
-            <Ionicons
-              name="people-outline"
-              size={48}
-              color="#64748B"
-            />
+            <Ionicons name="people-outline" size={48} color="#64748B" />
 
-            <Text style={styles.emptyTitle}>
-              No hay asistencia registrada
-            </Text>
+            <Text style={styles.emptyTitle}>No hay asistencia registrada</Text>
 
             <Text style={styles.emptyText}>
-              No se encontraron registros de asistencia
-              para esta sesión.
+              No se encontraron registros de asistencia para esta sesión.
             </Text>
           </View>
         ) : (
           <FlatList
             data={attendance}
             keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <StudentAttendanceCard
-                record={item}
-              />
-            )}
+            renderItem={({ item }) => <StudentAttendanceCard record={item} />}
             contentContainerStyle={styles.listContent}
             showsVerticalScrollIndicator={false}
             refreshing={isLoading}
@@ -287,9 +227,7 @@ export default function SessionAttendanceScreen() {
                       color="#0E6FB8"
                     />
 
-                    <Text style={styles.summaryTitle}>
-                      Resumen
-                    </Text>
+                    <Text style={styles.summaryTitle}>Resumen</Text>
                   </View>
 
                   <View style={styles.summaryGrid}>
@@ -298,81 +236,51 @@ export default function SessionAttendanceScreen() {
                         {attendance.length}
                       </Text>
 
-                      <Text style={styles.summaryLabel}>
-                        Alumnos
-                      </Text>
+                      <Text style={styles.summaryLabel}>Alumnos</Text>
                     </View>
 
                     <View style={styles.summaryItem}>
                       <Text
-                        style={[
-                          styles.summaryNumber,
-                          styles.presentNumber,
-                        ]}
+                        style={[styles.summaryNumber, styles.presentNumber]}
                       >
                         {presentCount}
                       </Text>
 
-                      <Text style={styles.summaryLabel}>
-                        Presentes
-                      </Text>
+                      <Text style={styles.summaryLabel}>Presentes</Text>
                     </View>
 
                     <View style={styles.summaryItem}>
-                      <Text
-                        style={[
-                          styles.summaryNumber,
-                          styles.absentNumber,
-                        ]}
-                      >
+                      <Text style={[styles.summaryNumber, styles.absentNumber]}>
                         {absentCount}
                       </Text>
 
-                      <Text style={styles.summaryLabel}>
-                        Ausentes
-                      </Text>
+                      <Text style={styles.summaryLabel}>Ausentes</Text>
                     </View>
 
                     <View style={styles.summaryItem}>
-                      <Text
-                        style={[
-                          styles.summaryNumber,
-                          styles.lateNumber,
-                        ]}
-                      >
+                      <Text style={[styles.summaryNumber, styles.lateNumber]}>
                         {lateCount}
                       </Text>
 
-                      <Text style={styles.summaryLabel}>
-                        Tardanzas
-                      </Text>
+                      <Text style={styles.summaryLabel}>Tardanzas</Text>
                     </View>
 
                     <View style={styles.summaryItem}>
                       <Text
-                        style={[
-                          styles.summaryNumber,
-                          styles.justifiedNumber,
-                        ]}
+                        style={[styles.summaryNumber, styles.justifiedNumber]}
                       >
                         {justifiedCount}
                       </Text>
 
-                      <Text style={styles.summaryLabel}>
-                        Justificadas
-                      </Text>
+                      <Text style={styles.summaryLabel}>Justificadas</Text>
                     </View>
                   </View>
                 </View>
 
                 <View style={styles.sectionHeader}>
-                  <Text style={styles.sectionTitle}>
-                    Alumnos
-                  </Text>
+                  <Text style={styles.sectionTitle}>Alumnos</Text>
 
-                  <Text style={styles.sectionCount}>
-                    {attendance.length}
-                  </Text>
+                  <Text style={styles.sectionCount}>{attendance.length}</Text>
                 </View>
               </View>
             }

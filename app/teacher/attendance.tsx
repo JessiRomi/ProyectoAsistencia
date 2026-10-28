@@ -1,10 +1,5 @@
 import { router, useLocalSearchParams } from "expo-router";
-
-import React, {
-  useEffect,
-  useState,
-} from "react";
-
+import React, { useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -15,9 +10,7 @@ import {
   View,
 } from "react-native";
 
-import {
-  AttendanceStatusSelector,
-} from "@/components/attendance/AttendanceStatusSelector";
+import { AttendanceStatusSelector } from "@/components/attendance/AttendanceStatusSelector";
 
 import { useCourseStudents } from "@/features/courses/useCourseStudents";
 import { useTeacherCourses } from "@/features/courses/useTeacherCourses";
@@ -25,10 +18,7 @@ import { useAttendance } from "@/features/attendance/useAttendance";
 
 import type { AttendanceStatus } from "@/features/attendance/attendance.types";
 
-type AttendanceState = Record<
-  string,
-  AttendanceStatus
->;
+type AttendanceState = Record<string, AttendanceStatus>;
 
 export default function TeacherAttendanceScreen() {
   const params = useLocalSearchParams<{
@@ -38,15 +28,8 @@ export default function TeacherAttendanceScreen() {
 
   const id = params.id;
   const sessionId = params.sessionId;
-
-  const {
-    courses,
-    isLoading: isLoadingCourses,
-  } = useTeacherCourses();
-
-  const course = courses.find(
-    (item) => item.id === id,
-  );
+  const { courses, isLoading: isLoadingCourses } = useTeacherCourses();
+  const course = courses.find((item) => item.id === id);
 
   const {
     students,
@@ -62,27 +45,16 @@ export default function TeacherAttendanceScreen() {
     error: attendanceError,
   } = useAttendance();
 
-  const [attendance, setAttendance] =
-    useState<AttendanceState>({});
+  const [attendance, setAttendance] = useState<AttendanceState>({});
 
-  useEffect(() => {
-    if (!students.length) {
-      return;
-    }
+  const attendanceWithDefaults: AttendanceState = {
+    ...Object.fromEntries(
+      students.map((student) => [student.id, "ABSENT" as AttendanceStatus]),
+    ),
+    ...attendance,
+  };
 
-    const initialState: AttendanceState = {};
-
-    students.forEach((student) => {
-      initialState[student.id] = "ABSENT";
-    });
-
-    setAttendance(initialState);
-  }, [students]);
-
-  function handleStatusChange(
-    studentId: string,
-    status: AttendanceStatus,
-  ) {
+  function handleStatusChange(studentId: string, status: AttendanceStatus) {
     setAttendance((current) => ({
       ...current,
       [studentId]: status,
@@ -91,25 +63,18 @@ export default function TeacherAttendanceScreen() {
 
   async function handleSaveAttendance() {
     if (!id) {
-      Alert.alert(
-        "Error",
-        "No se encontró la cursada.",
-      );
+      Alert.alert("Error", "No se encontró la cursada.");
       return;
     }
 
     if (!students.length) {
-      Alert.alert(
-        "Sin estudiantes",
-        "No hay estudiantes para registrar.",
-      );
+      Alert.alert("Sin estudiantes", "No hay estudiantes para registrar.");
       return;
     }
 
     const records = students.map((student) => ({
       studentId: student.id,
-      status:
-        attendance[student.id] ?? "ABSENT",
+      status: attendanceWithDefaults[student.id],
     }));
 
     try {
@@ -118,19 +83,13 @@ export default function TeacherAttendanceScreen() {
        * usamos exactamente la sesión creada.
        */
       if (sessionId) {
-        await saveAttendanceForSession(
-          sessionId,
-          records,
-        );
+        await saveAttendanceForSession(sessionId, records);
       } else {
         /*
          * Mantenemos el flujo anterior para no romper
          * la pantalla si se accede directamente.
          */
-        await saveAttendance(
-          id,
-          records,
-        );
+        await saveAttendance(id, records);
       }
 
       Alert.alert(
@@ -146,32 +105,23 @@ export default function TeacherAttendanceScreen() {
         ],
       );
     } catch (error) {
-      console.error(
-        "Error guardando asistencia:",
-        error,
-      );
+      console.error("Error guardando asistencia:", error);
 
       Alert.alert(
         "Error",
         error instanceof Error
           ? error.message
-          : attendanceError ||
-              "No se pudo guardar la asistencia.",
+          : attendanceError || "No se pudo guardar la asistencia.",
       );
     }
   }
 
-  if (
-    isLoadingCourses ||
-    isLoadingStudents
-  ) {
+  if (isLoadingCourses || isLoadingStudents) {
     return (
       <View style={styles.center}>
         <ActivityIndicator size="large" />
 
-        <Text style={styles.loadingText}>
-          Cargando estudiantes...
-        </Text>
+        <Text style={styles.loadingText}>Cargando estudiantes...</Text>
       </View>
     );
   }
@@ -179,9 +129,7 @@ export default function TeacherAttendanceScreen() {
   if (!id) {
     return (
       <View style={styles.center}>
-        <Text style={styles.errorText}>
-          No se encontró la cursada.
-        </Text>
+        <Text style={styles.errorText}>No se encontró la cursada.</Text>
       </View>
     );
   }
@@ -189,17 +137,10 @@ export default function TeacherAttendanceScreen() {
   if (studentsError) {
     return (
       <View style={styles.center}>
-        <Text style={styles.errorText}>
-          {studentsError}
-        </Text>
+        <Text style={styles.errorText}>{studentsError}</Text>
 
-        <Pressable
-          style={styles.retryButton}
-          onPress={reloadStudents}
-        >
-          <Text style={styles.retryButtonText}>
-            Reintentar
-          </Text>
+        <Pressable style={styles.retryButton} onPress={reloadStudents}>
+          <Text style={styles.retryButtonText}>Reintentar</Text>
         </Pressable>
       </View>
     );
@@ -208,73 +149,43 @@ export default function TeacherAttendanceScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>
-          Tomar asistencia
-        </Text>
+        <Text style={styles.title}>Tomar asistencia</Text>
 
         <Text style={styles.courseName}>
-          {course?.subject?.name ??
-            "Curso seleccionado"}
+          {course?.subject?.name ?? "Curso seleccionado"}
         </Text>
 
-        {sessionId ? (
-          <Text style={styles.sessionInfo}>
-            Nueva clase
-          </Text>
-        ) : null}
+        {sessionId ? <Text style={styles.sessionInfo}>Nueva clase</Text> : null}
       </View>
 
       <FlatList
         data={students}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={
-          styles.listContent
-        }
+        contentContainerStyle={styles.listContent}
         renderItem={({ item }) => (
           <View style={styles.studentCard}>
-            <View
-              style={styles.studentInfo}
-            >
+            <View style={styles.studentInfo}>
               <Text style={styles.studentName}>
-                {item.firstName}{" "}
-                {item.lastName}
+                {item.firstName} {item.lastName}
               </Text>
 
               {item.studentNumber ? (
-                <Text
-                  style={
-                    styles.studentNumber
-                  }
-                >
-                  Legajo:{" "}
-                  {item.studentNumber}
+                <Text style={styles.studentNumber}>
+                  Legajo: {item.studentNumber}
                 </Text>
               ) : null}
             </View>
 
             <AttendanceStatusSelector
-              status={
-                attendance[item.id] ??
-                "ABSENT"
-              }
-              onChange={(status) =>
-                handleStatusChange(
-                  item.id,
-                  status,
-                )
-              }
+              status={attendanceWithDefaults[item.id]}
+              onChange={(status) => handleStatusChange(item.id, status)}
             />
           </View>
         )}
         ListEmptyComponent={
-          <View
-            style={styles.emptyContainer}
-          >
-            <Text
-              style={styles.emptyText}
-            >
-              No hay estudiantes registrados
-              en esta cursada.
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>
+              No hay estudiantes registrados en esta cursada.
             </Text>
           </View>
         }
@@ -282,24 +193,14 @@ export default function TeacherAttendanceScreen() {
 
       <View style={styles.footer}>
         <Pressable
-          style={[
-            styles.saveButton,
-            isSaving &&
-              styles.saveButtonDisabled,
-          ]}
+          style={[styles.saveButton, isSaving && styles.saveButtonDisabled]}
           onPress={handleSaveAttendance}
           disabled={isSaving}
         >
           {isSaving ? (
-            <ActivityIndicator
-              color="#ffffff"
-            />
+            <ActivityIndicator color="#ffffff" />
           ) : (
-            <Text
-              style={styles.saveButtonText}
-            >
-              Guardar asistencia
-            </Text>
+            <Text style={styles.saveButtonText}>Guardar asistencia</Text>
           )}
         </Pressable>
       </View>
