@@ -1,10 +1,7 @@
-import {
-  ActivityIndicator,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+
+import { AppButton } from "@/components/ui/AppButton";
+import { useAppTheme } from "@/features/theme/theme.provider";
 
 type Props = {
   type: "loading" | "error" | "empty";
@@ -12,33 +9,35 @@ type Props = {
   onRetry?: () => void;
 };
 
-export function FeedbackState({
-  type,
-  message,
-  onRetry,
-}: Props) {
+export function FeedbackState({ type, message, onRetry }: Props) {
+  const { colors } = useAppTheme();
+
   if (type === "loading") {
     return (
       <View style={styles.container}>
-        <ActivityIndicator size="large" />
-        <Text style={styles.message}>{message}</Text>
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={[styles.message, { color: colors.textSecondary }]}>
+          {message}
+        </Text>
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      <Text style={styles.message}>{message}</Text>
+      <Text style={[styles.message, { color: colors.textSecondary }]}>
+        {message}
+      </Text>
 
       {type === "error" && onRetry && (
-        <Pressable
-          style={styles.retryButton}
-          onPress={onRetry}
-        >
-          <Text style={styles.retryText}>
-            Reintentar
-          </Text>
-        </Pressable>
+        <View style={styles.retryButton}>
+          <AppButton
+            label="Reintentar"
+            onPress={onRetry}
+            variant="secondary"
+            size="medium"
+          />
+        </View>
       )}
     </View>
   );
@@ -51,25 +50,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     padding: 24,
   },
-
   message: {
     marginTop: 12,
     textAlign: "center",
     fontSize: 15,
-    color: "#6B7280",
   },
-
   retryButton: {
     marginTop: 16,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 10,
-    backgroundColor: "#E8F0FB",
-  },
-
-  retryText: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#4070B2",
   },
 });

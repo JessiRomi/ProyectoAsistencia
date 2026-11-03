@@ -1,9 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import {
-  Stack,
-  router,
-  useLocalSearchParams,
-} from "expo-router";
+import { Stack, router, useLocalSearchParams } from "expo-router";
 import {
   ActivityIndicator,
   FlatList,
@@ -12,9 +8,15 @@ import {
   Text,
   View,
 } from "react-native";
+import { useState } from "react";
 
+import { AppButton } from "@/components/ui/AppButton";
+import { AppCard } from "@/components/ui/AppCard";
 import type { ClassSession } from "@/features/attendance/attendance.types";
 import { useCourseSessions } from "@/features/attendance/useCourseSessions";
+import { useAppTheme } from "@/features/theme/theme.provider";
+
+const SESSIONS_PER_PAGE = 3;
 
 function formatDate(dateString: string) {
   const date = new Date(dateString);
@@ -36,9 +38,12 @@ function getStatusLabel(status: ClassSession["status"]) {
 
 function SessionCard({
   session,
+  cardColor,
 }: {
   session: ClassSession;
+  cardColor: string;
 }) {
+  const { colors } = useAppTheme();
   const isClosed = session.status === "CLOSED";
 
   function openSessionDetail() {
@@ -46,27 +51,27 @@ function SessionCard({
       pathname: "/teacher/session-attendance",
       params: {
         id: session.id,
+        courseOfferingId: session.courseOfferingId,
       },
     });
   }
 
   return (
-    <Pressable
-      style={({ pressed }) => [
+    <AppCard
+      style={[
         styles.card,
-        pressed && styles.cardPressed,
+        {
+          backgroundColor: colors.surface,
+          borderColor: colors.border,
+          borderLeftColor: cardColor,
+        },
       ]}
-      onPress={openSessionDetail}
     >
       <View style={styles.cardHeader}>
         <View style={styles.dateContainer}>
-          <Ionicons
-            name="calendar-outline"
-            size={20}
-            color="#0E6FB8"
-          />
+          <Ionicons name="calendar-outline" size={23} color={cardColor} />
 
-          <Text style={styles.date}>
+          <Text style={[styles.date, { color: colors.text }]}>
             {formatDate(session.date)}
           </Text>
         </View>
@@ -74,17 +79,19 @@ function SessionCard({
         <View
           style={[
             styles.statusBadge,
-            isClosed
-              ? styles.closedBadge
-              : styles.openBadge,
+            {
+              backgroundColor: isClosed
+                ? `${colors.success}20`
+                : `${colors.warning}20`,
+            },
           ]}
         >
           <Text
             style={[
               styles.statusText,
-              isClosed
-                ? styles.closedText
-                : styles.openText,
+              {
+                color: isClosed ? colors.success : colors.warning,
+              },
             ]}
           >
             {getStatusLabel(session.status)}
@@ -92,21 +99,17 @@ function SessionCard({
         </View>
       </View>
 
-      <View style={styles.divider} />
+      <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
       <View style={styles.topicContainer}>
-        <Ionicons
-          name="book-outline"
-          size={18}
-          color="#64748B"
-        />
+        <Ionicons name="book-outline" size={20} color={cardColor} />
 
         <View style={styles.topicContent}>
-          <Text style={styles.topicLabel}>
+          <Text style={[styles.topicLabel, { color: colors.textSecondary }]}>
             Tema
           </Text>
 
-          <Text style={styles.topic}>
+          <Text style={[styles.topic, { color: colors.text }]}>
             {session.topic || "Sin tema registrado"}
           </Text>
         </View>
@@ -114,80 +117,88 @@ function SessionCard({
 
       {session.notes ? (
         <View style={styles.notesContainer}>
-          <Ionicons
-            name="document-text-outline"
-            size={18}
-            color="#64748B"
-          />
+          <Ionicons name="document-text-outline" size={20} color={cardColor} />
 
           <View style={styles.topicContent}>
-            <Text style={styles.topicLabel}>
+            <Text style={[styles.topicLabel, { color: colors.textSecondary }]}>
               Observaciones
             </Text>
 
-            <Text style={styles.notes}>
+            <Text style={[styles.notes, { color: colors.textSecondary }]}>
               {session.notes}
             </Text>
           </View>
         </View>
       ) : null}
 
-      <View style={styles.detailRow}>
-        <Text style={styles.detailText}>
-          Ver asistencia
-        </Text>
-
-        <Ionicons
-          name="chevron-forward"
-          size={20}
-          color="#0E6FB8"
+      <View style={[styles.detailRow, { borderTopColor: colors.border }]}>
+        <AppButton
+          label="Ver asistencia"
+          icon="chevron-forward"
+          iconPosition="right"
+          onPress={openSessionDetail}
+          variant="danger"
+          size="small"
         />
       </View>
-    </Pressable>
+    </AppCard>
   );
 }
 
 export default function CourseSessionsScreen() {
   const params = useLocalSearchParams<{ id: string }>();
+  const { colors } = useAppTheme();
 
-  const courseOfferingId = Array.isArray(params.id)
-    ? params.id[0]
-    : params.id;
+  const [currentPage, setCurrentPage] = useState(0);
 
-  const {
-    sessions,
-    isLoading,
-    error,
-    reload,
-  } = useCourseSessions(courseOfferingId);
+  const courseOfferingId = Array.isArray(params.id) ? params.id[0] : params.id;
+
+  const { sessions, isLoading, error, reload } =
+    useCourseSessions(courseOfferingId);
+
+  const totalPages = Math.ceil(sessions.length / SESSIONS_PER_PAGE);
+  const safePage = Math.min(currentPage, Math.max(totalPages - 1, 0));
+
+  const startIndex = safePage * SESSIONS_PER_PAGE;
+  const paginatedSessions = sessions.slice(
+    startIndex,
+    startIndex + SESSIONS_PER_PAGE,
+  );
+
+  const cardColors = [colors.secondary, colors.accent, colors.success];
 
   return (
     <>
-      <Stack.Screen
-        options={{
-          headerShown: false,
-        }}
-      />
+      <Stack.Screen options={{ headerShown: false }} />
 
-      <View style={styles.container}>
-        <View style={styles.header}>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <View
+          style={[
+            styles.header,
+            {
+              backgroundColor: colors.surface,
+              borderBottomColor: colors.border,
+            },
+          ]}
+        >
           <Pressable
-            style={styles.backButton}
+            accessibilityRole="button"
+            accessibilityLabel="Volver"
             onPress={() => router.back()}
+            style={({ pressed }) => [
+              styles.backButton,
+              pressed && styles.pressed,
+            ]}
           >
-            <Ionicons
-              name="arrow-back"
-              size={24}
-              color="#0F172A"
-            />
+            <Ionicons name="arrow-back" size={29} color={colors.text} />
           </Pressable>
 
           <View style={styles.headerContent}>
-            <Text style={styles.title}>
+            <Text style={[styles.title, { color: colors.text }]}>
               Historial de clases
             </Text>
 
-            <Text style={styles.subtitle}>
+            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
               Sesiones registradas
             </Text>
           </View>
@@ -195,12 +206,9 @@ export default function CourseSessionsScreen() {
 
         {isLoading ? (
           <View style={styles.centerContent}>
-            <ActivityIndicator
-              size="large"
-              color="#0E6FB8"
-            />
+            <ActivityIndicator size="large" color={colors.primary} />
 
-            <Text style={styles.loadingText}>
+            <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
               Cargando historial...
             </Text>
           </View>
@@ -209,53 +217,111 @@ export default function CourseSessionsScreen() {
             <Ionicons
               name="alert-circle-outline"
               size={42}
-              color="#DC2626"
+              color={colors.error}
             />
 
-            <Text style={styles.errorTitle}>
+            <Text style={[styles.errorTitle, { color: colors.text }]}>
               No se pudo cargar el historial
             </Text>
 
-            <Text style={styles.errorText}>
+            <Text style={[styles.errorText, { color: colors.textSecondary }]}>
               {error}
             </Text>
 
-            <Pressable
-              style={styles.retryButton}
+            <AppButton
+              label="Reintentar"
+              icon="refresh"
               onPress={reload}
-            >
-              <Text style={styles.retryButtonText}>
-                Reintentar
-              </Text>
-            </Pressable>
+              variant="primary"
+              size="medium"
+            />
           </View>
         ) : sessions.length === 0 ? (
           <View style={styles.centerContent}>
             <Ionicons
               name="calendar-outline"
               size={48}
-              color="#64748B"
+              color={colors.textSecondary}
             />
 
-            <Text style={styles.emptyTitle}>
+            <Text style={[styles.emptyTitle, { color: colors.text }]}>
               No hay clases registradas
             </Text>
 
-            <Text style={styles.emptyText}>
-              Todavia no se registraron sesiones para esta materia.
+            <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
+              Todavía no se registraron sesiones para esta materia.
             </Text>
           </View>
         ) : (
           <FlatList
-            data={sessions}
+            data={paginatedSessions}
             keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <SessionCard session={item} />
+            renderItem={({ item, index }) => (
+              <SessionCard
+                session={item}
+                cardColor={cardColors[(startIndex + index) % cardColors.length]}
+              />
             )}
+            ItemSeparatorComponent={() => <View style={styles.separator} />}
             contentContainerStyle={styles.listContent}
             showsVerticalScrollIndicator={false}
             refreshing={isLoading}
             onRefresh={reload}
+            ListFooterComponent={
+              totalPages > 1
+                ? () => (
+                    <View
+                      style={[
+                        styles.pagination,
+                        {
+                          borderColor: colors.border,
+                          backgroundColor: colors.surface,
+                        },
+                      ]}
+                    >
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel="Página anterior"
+                        disabled={safePage === 0}
+                        onPress={() => setCurrentPage(safePage - 1)}
+                        style={styles.paginationButton}
+                      >
+                        <Ionicons
+                          name="chevron-back"
+                          size={25}
+                          color={
+                            safePage === 0 ? colors.inactive : colors.secondary
+                          }
+                        />
+                      </Pressable>
+
+                      <Text
+                        style={[styles.paginationText, { color: colors.text }]}
+                      >
+                        Página {safePage + 1} de {totalPages}
+                      </Text>
+
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel="Página siguiente"
+                        disabled={safePage >= totalPages - 1}
+                        onPress={() => setCurrentPage(safePage + 1)}
+                        style={styles.paginationButton}
+                      >
+                        <Ionicons
+                          name="chevron-forward"
+                          size={25}
+                          color={
+                            safePage >= totalPages - 1
+                              ? colors.inactive
+                              : colors.secondary
+                          }
+                        />
+                      </Pressable>
+                    </View>
+                  )
+                : undefined
+            }
           />
         )}
       </View>
@@ -266,28 +332,23 @@ export default function CourseSessionsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8FAFC",
   },
 
   header: {
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 20,
-    paddingTop: 24,
+    paddingTop: 48,
     paddingBottom: 20,
-    backgroundColor: "#FFFFFF",
     borderBottomWidth: 1,
-    borderBottomColor: "#CBD5E1",
+    gap: 16,
   },
 
   backButton: {
-    width: 42,
-    height: 42,
-    borderRadius: 12,
+    width: 40,
+    height: 46,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#F1F5F9",
-    marginRight: 12,
   },
 
   headerContent: {
@@ -296,82 +357,59 @@ const styles = StyleSheet.create({
 
   title: {
     fontSize: 24,
-    fontWeight: "700",
-    color: "#0F172A",
+    fontWeight: "800",
   },
 
   subtitle: {
     marginTop: 4,
     fontSize: 14,
-    color: "#64748B",
   },
 
   listContent: {
     padding: 16,
-    paddingBottom: 32,
+    paddingBottom: 30,
+  },
+
+  separator: {
+    height: 12,
   },
 
   card: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
     borderWidth: 1,
-    borderColor: "#CBD5E1",
-  },
-
-  cardPressed: {
-    opacity: 0.75,
+    borderLeftWidth: 6,
+    borderRadius: 0,
   },
 
   cardHeader: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    gap: 8,
   },
 
   dateContainer: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: 9,
   },
 
   date: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#0F172A",
+    fontSize: 17,
+    fontWeight: "800",
   },
 
   statusBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 999,
-  },
-
-  closedBadge: {
-    backgroundColor: "#DCFCE7",
-  },
-
-  openBadge: {
-    backgroundColor: "#FEF3C7",
+    paddingHorizontal: 12,
+    paddingVertical: 7,
   },
 
   statusText: {
     fontSize: 12,
-    fontWeight: "700",
-  },
-
-  closedText: {
-    color: "#166534",
-  },
-
-  openText: {
-    color: "#92400E",
+    fontWeight: "800",
   },
 
   divider: {
     height: 1,
-    backgroundColor: "#E2E8F0",
     marginVertical: 14,
   },
 
@@ -387,14 +425,13 @@ const styles = StyleSheet.create({
 
   topicLabel: {
     fontSize: 12,
-    color: "#64748B",
-    marginBottom: 3,
+    marginBottom: 4,
   },
 
   topic: {
     fontSize: 15,
-    fontWeight: "600",
-    color: "#0F172A",
+    fontWeight: "700",
+    lineHeight: 21,
   },
 
   notesContainer: {
@@ -405,25 +442,41 @@ const styles = StyleSheet.create({
 
   notes: {
     fontSize: 14,
-    color: "#475569",
     lineHeight: 20,
   },
 
   detailRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "flex-end",
+    alignItems: "flex-start",
     marginTop: 16,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: "#E2E8F0",
   },
 
-  detailText: {
-    marginRight: 4,
-    fontSize: 13,
+  pagination: {
+    minHeight: 64,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 18,
+    borderWidth: 1,
+    borderRadius: 0,
+    paddingHorizontal: 12,
+  },
+
+  paginationButton: {
+    width: 42,
+    height: 46,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  paginationText: {
+    fontSize: 14,
     fontWeight: "700",
-    color: "#0E6FB8",
+  },
+
+  pressed: {
+    opacity: 0.65,
   },
 
   centerContent: {
@@ -431,58 +484,33 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 32,
+    gap: 12,
   },
 
   loadingText: {
-    marginTop: 12,
     fontSize: 14,
-    color: "#64748B",
   },
 
   errorTitle: {
-    marginTop: 12,
     fontSize: 18,
     fontWeight: "700",
-    color: "#0F172A",
     textAlign: "center",
   },
 
   errorText: {
-    marginTop: 6,
     fontSize: 14,
-    color: "#64748B",
     textAlign: "center",
   },
 
-  retryButton: {
-    marginTop: 20,
-    backgroundColor: "#0E6FB8",
-    paddingHorizontal: 20,
-    paddingVertical: 11,
-    borderRadius: 10,
-  },
-
-  retryButtonText: {
-    color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: "700",
-  },
-
   emptyTitle: {
-    marginTop: 14,
     fontSize: 18,
     fontWeight: "700",
-    color: "#0F172A",
     textAlign: "center",
   },
 
   emptyText: {
-    marginTop: 6,
     fontSize: 14,
-    color: "#64748B",
     textAlign: "center",
     lineHeight: 20,
   },
 });
-
-

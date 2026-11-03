@@ -19,11 +19,11 @@ export type CourseOffering = {
   commission: string;
 
   shift:
-    | "MORNING"
-    | "AFTERNOON"
-    | "EVENING"
-    | "VIRTUAL"
-    | "MIXED";
+  | "MORNING"
+  | "AFTERNOON"
+  | "EVENING"
+  | "VIRTUAL"
+  | "MIXED";
 
   dayOfWeek: number;
 
@@ -84,4 +84,39 @@ export type EnrolledStudent = {
   updatedAt?: string;
 
   deletedAt?: string | null;
+};
+
+export type StudentEnrollment = {
+  id: string;
+  courseOfferingId: string;
+  studentId: string;
+  status: "ACTIVE" | "DROPPED" | "COMPLETED" | string;
+  resultStatus?: string | null;
+  finalGrade?: number | null;
+  enrolledAt?: string;
+  courseOffering: {
+    id: string;
+    commission: string;
+    shift: CourseOffering["shift"];
+    dayOfWeek: number;
+    startTime: string;
+    endTime: string;
+    classroom: string | null;
+    subject: {
+      id: string;
+      name: string;
+      code: string;
+      year?: number;
+      semester?: number;
+    };
+    academicYear: {
+      id: string;
+      year: number;
+      name: string;
+    };
+    teacher?: {
+      firstName: string;
+      lastName: string;
+    } | null;
+  };
 };

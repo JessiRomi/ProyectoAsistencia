@@ -1,8 +1,8 @@
 import { apiClient } from "@/lib/api/api.client";
-
 import type {
   CourseOffering,
   EnrolledStudent,
+  StudentEnrollment,
 } from "./courses.types";
 
 export async function getMyCourseOfferings(): Promise<CourseOffering[]> {
@@ -25,6 +25,17 @@ export async function getCourseStudents(
     data: EnrolledStudent[];
     timestamp: string;
   }>(`/course-offerings/${courseOfferingId}/students`, {
+    method: "GET",
+  });
+
+  return response.data;
+}
+export async function getMyEnrollments(): Promise<StudentEnrollment[]> {
+  const response = await apiClient<{
+    success: boolean;
+    data: StudentEnrollment[];
+    timestamp: string;
+  }>("/students/me/enrollments", {
     method: "GET",
   });
 

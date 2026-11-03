@@ -1,122 +1,177 @@
+import { Ionicons } from "@expo/vector-icons";
 import { Stack, router } from "expo-router";
-import {
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import LogoutButton from "@/components/logout-button";
+import { AppCard } from "@/components/ui/AppCard";
+import { useAppTheme } from "@/features/theme/theme.provider";
 import { useSession } from "@/features/auth/useSession";
 
 export default function TeacherProfileScreen() {
   const { user } = useSession();
+  const { colors } = useAppTheme();
 
   if (!user) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView
+        style={[styles.container, { backgroundColor: colors.background }]}
+      >
         <View style={styles.centerContainer}>
-          <Text style={styles.errorTitle}>
+          <Text style={[styles.errorTitle, { color: colors.text }]}>
             No se pudo cargar el perfil
           </Text>
-
-          <Pressable
-            style={styles.backButton}
-            onPress={() => router.back()}
-          >
-            <Text style={styles.backButtonText}>
-              Volver
-            </Text>
-          </Pressable>
         </View>
       </SafeAreaView>
     );
   }
 
   const fullName = user.profile
-    ? `${user.profile.firstName} ${user.profile.lastName}`
+    ? `${user.profile.firstName} ${user.profile.lastName}`.trim()
     : "Sin nombre registrado";
 
+  const firstName = user.profile?.firstName?.trim() ?? "";
+  const lastName = user.profile?.lastName?.trim() ?? "";
+
   return (
-    <SafeAreaView style={styles.container}>
-      <Stack.Screen
-        options={{
-          headerShown: false,
-        }}
-      />
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: colors.background }]}
+    >
+      <Stack.Screen options={{ headerShown: false }} />
 
       <View style={styles.content}>
         <View style={styles.header}>
-          <Pressable
-            style={styles.backButton}
-            onPress={() => router.back()}
-          >
-            <Text style={styles.backButtonText}>
-              ← Volver
-            </Text>
-          </Pressable>
+          <View style={styles.headerSide}>
+            <Ionicons.Button
+              name="arrow-back"
+              size={22}
+              color={colors.text}
+              backgroundColor="transparent"
+              underlayColor="transparent"
+              onPress={() => router.back()}
+            />
+          </View>
 
-          <Text style={styles.title}>
-            Mi perfil
-          </Text>
+          <Text style={[styles.title, { color: colors.text }]}>Mi perfil</Text>
 
-          <Text style={styles.subtitle}>
-            Información de la cuenta
-          </Text>
+          <View style={styles.headerSide} />
         </View>
 
         <View style={styles.profileCard}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>
-              {user.profile?.firstName?.charAt(0).toUpperCase() ?? "P"}
-            </Text>
+          <View style={[styles.avatar, { backgroundColor: colors.secondary }]}>
+            <Ionicons name="person-outline" size={42} color={colors.white} />
           </View>
 
-          <Text style={styles.name}>
-            {fullName}
-          </Text>
+          <Text style={[styles.name, { color: colors.text }]}>{fullName}</Text>
 
-          <View style={styles.roleBadge}>
-            <Text style={styles.roleText}>
-              Profesor
-            </Text>
-          </View>
+          <Text style={[styles.role, { color: colors.accent }]}>Docente</Text>
         </View>
 
-        <View style={styles.infoCard}>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>
-              Nombre
-            </Text>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>
+          Información personal
+        </Text>
 
-            <Text style={styles.infoValue}>
-              {fullName}
-            </Text>
+        <AppCard style={styles.infoCard}>
+          <View style={styles.infoRow}>
+            <View
+              style={[
+                styles.infoIcon,
+                { backgroundColor: `${colors.secondary}25` },
+              ]}
+            >
+              <Ionicons
+                name="person-outline"
+                size={22}
+                color={colors.secondary}
+              />
+            </View>
+
+            <View style={styles.infoContent}>
+              <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>
+                Nombre
+              </Text>
+
+              <Text style={[styles.infoValue, { color: colors.text }]}>
+                {firstName || "No registrado"}
+              </Text>
+            </View>
           </View>
 
-          <View style={styles.divider} />
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
           <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>
-              Correo electrónico
-            </Text>
+            <View
+              style={[
+                styles.infoIcon,
+                { backgroundColor: `${colors.accent}25` },
+              ]}
+            >
+              <Ionicons name="person-outline" size={22} color={colors.accent} />
+            </View>
 
-            <Text style={styles.infoValue}>
-              {user.email}
-            </Text>
+            <View style={styles.infoContent}>
+              <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>
+                Apellido
+              </Text>
+
+              <Text style={[styles.infoValue, { color: colors.text }]}>
+                {lastName || "No registrado"}
+              </Text>
+            </View>
           </View>
 
-          <View style={styles.divider} />
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
           <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>
-              Rol
-            </Text>
+            <View
+              style={[
+                styles.infoIcon,
+                { backgroundColor: `${colors.success}25` },
+              ]}
+            >
+              <Ionicons name="mail-outline" size={22} color={colors.success} />
+            </View>
 
-            <Text style={styles.infoValue}>
-              Profesor
-            </Text>
+            <View style={styles.infoContent}>
+              <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>
+                Correo electrónico
+              </Text>
+
+              <Text
+                style={[styles.infoValue, { color: colors.text }]}
+                selectable
+              >
+                {user.email}
+              </Text>
+            </View>
           </View>
+
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
+
+          <View style={styles.infoRow}>
+            <View
+              style={[
+                styles.infoIcon,
+                { backgroundColor: `${colors.accent}25` },
+              ]}
+            >
+              <Ionicons name="school-outline" size={22} color={colors.accent} />
+            </View>
+
+            <View style={styles.infoContent}>
+              <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>
+                Rol
+              </Text>
+
+              <Text style={[styles.infoValue, { color: colors.text }]}>
+                Docente
+              </Text>
+            </View>
+          </View>
+        </AppCard>
+
+        <View style={styles.logoutContainer}>
+          <LogoutButton />
         </View>
       </View>
     </SafeAreaView>
@@ -126,115 +181,109 @@ export default function TeacherProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F4F7FB",
   },
 
   content: {
     flex: 1,
     paddingHorizontal: 20,
-    paddingTop: 20,
+    paddingTop: 12,
+    paddingBottom: 24,
   },
 
   header: {
+    height: 48,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     marginBottom: 24,
   },
 
-  backButton: {
-    alignSelf: "flex-start",
-    marginBottom: 18,
-    paddingVertical: 6,
-  },
-
-  backButtonText: {
-    color: "#4070B2",
-    fontSize: 15,
-    fontWeight: "700",
+  headerSide: {
+    width: 48,
+    height: 44,
+    justifyContent: "center",
   },
 
   title: {
-    fontSize: 28,
+    fontSize: 21,
     fontWeight: "800",
-    color: "#1F2937",
-  },
-
-  subtitle: {
-    marginTop: 6,
-    fontSize: 14,
-    color: "#6B7280",
   },
 
   profileCard: {
     alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 18,
-    paddingVertical: 28,
+    paddingVertical: 24,
     paddingHorizontal: 20,
-    marginBottom: 16,
+    marginBottom: 28,
   },
 
   avatar: {
     width: 76,
     height: 76,
-    borderRadius: 38,
-    backgroundColor: "#4070B2",
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 14,
-  },
-
-  avatarText: {
-    color: "#FFFFFF",
-    fontSize: 30,
-    fontWeight: "800",
+    borderRadius: 0,
   },
 
   name: {
     fontSize: 21,
     fontWeight: "800",
-    color: "#1F2937",
     textAlign: "center",
   },
 
-  roleBadge: {
-    marginTop: 10,
-    backgroundColor: "#E8F0FA",
-    borderRadius: 20,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
+  role: {
+    fontSize: 15,
+    fontWeight: "700",
+    marginTop: 6,
   },
 
-  roleText: {
-    color: "#4070B2",
-    fontSize: 13,
-    fontWeight: "700",
+  sectionTitle: {
+    fontSize: 19,
+    fontWeight: "800",
+    marginBottom: 14,
   },
 
   infoCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    paddingHorizontal: 18,
+    paddingHorizontal: 16,
   },
 
   infoRow: {
-    paddingVertical: 17,
+    minHeight: 76,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 10,
+    gap: 14,
+  },
+
+  infoIcon: {
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 0,
+  },
+
+  infoContent: {
+    flex: 1,
+    gap: 4,
   },
 
   infoLabel: {
     fontSize: 12,
-    fontWeight: "700",
-    color: "#6B7280",
-    marginBottom: 5,
+    fontWeight: "600",
   },
 
   infoValue: {
     fontSize: 15,
-    color: "#1F2937",
-    fontWeight: "600",
+    fontWeight: "700",
   },
 
   divider: {
     height: 1,
-    backgroundColor: "#E5E7EB",
+  },
+
+  logoutContainer: {
+    marginTop: 28,
   },
 
   centerContainer: {
@@ -247,9 +296,6 @@ const styles = StyleSheet.create({
   errorTitle: {
     fontSize: 18,
     fontWeight: "800",
-    color: "#1F2937",
     textAlign: "center",
-    marginBottom: 18,
   },
 });
-

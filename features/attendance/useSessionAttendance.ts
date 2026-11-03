@@ -1,3 +1,4 @@
+
 import { useCallback, useEffect, useState } from "react";
 
 import { getSessionAttendance } from "./attendance.service";
@@ -16,18 +17,14 @@ export function useSessionAttendance(sessionId?: string) {
       return;
     }
 
+    setIsLoading(true);
+    setError("");
+
     try {
-      setIsLoading(true);
-      setError("");
-
       const data = await getSessionAttendance(sessionId);
-
       setAttendance(data);
     } catch (error) {
-      console.error(
-        "Error cargando la asistencia de la sesión:",
-        error,
-      );
+      console.error("Error cargando la asistencia de la sesión:", error);
 
       setError(
         error instanceof Error
@@ -40,8 +37,48 @@ export function useSessionAttendance(sessionId?: string) {
   }, [sessionId]);
 
   useEffect(() => {
-    loadAttendance();
-  }, [loadAttendance]);
+    let active = true;
+
+    async function load() {
+      if (!sessionId) {
+        setAttendance([]);
+        setIsLoading(false);
+        setError("");
+        return;
+      }
+
+      setIsLoading(true);
+      setError("");
+
+      try {
+        const data = await getSessionAttendance(sessionId);
+
+        if (active) {
+          setAttendance(data);
+        }
+      } catch (error) {
+        console.error("Error cargando la asistencia de la sesión:", error);
+
+        if (active) {
+          setError(
+            error instanceof Error
+              ? error.message
+              : "No se pudo cargar la asistencia.",
+          );
+        }
+      } finally {
+        if (active) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    void load();
+
+    return () => {
+      active = false;
+    };
+  }, [sessionId]);
 
   return {
     attendance,

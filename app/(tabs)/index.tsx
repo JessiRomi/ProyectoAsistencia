@@ -3,367 +3,236 @@ import { router } from "expo-router";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import LogoutButton from "@/components/logout-button";
+import { AppCard } from "@/components/ui/AppCard";
+import { useAppTheme } from "@/features/theme/theme.provider";
 
 export default function HomeScreen() {
+  const { colors } = useAppTheme();
+
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* ENCABEZADO */}
+        {/* ENCABEZADO Y PERFIL */}
         <View style={styles.header}>
           <View style={styles.headerText}>
-            <Text style={styles.greeting}>¡Bienvenido!</Text>
+            <Text style={[styles.greeting, { color: colors.text }]}>
+              ¡Bienvenido!
+            </Text>
 
-            <Text style={styles.institution}>
-              Instituto Técnico Superior
+            <Text style={[styles.subtitle, { color: colors.accent }]}>
+              Estudiante
             </Text>
           </View>
 
-          <View style={styles.logoContainer}>
-            <Text style={styles.logoText}>ITS</Text>
-          </View>
-        </View>
-
-        {/* TARJETA DE BIENVENIDA */}
-        <View style={styles.welcomeCard}>
-          <View style={styles.welcomeIcon}>
-            <Ionicons
-              name="school-outline"
-              size={28}
-              color="#FFFFFF"
-            />
-          </View>
-
-          <View style={styles.welcomeContent}>
-            <Text style={styles.welcomeTitle}>
-              Mi espacio académico
-            </Text>
-
-            <Text style={styles.welcomeText}>
-              Consultá tu información académica y el estado de tus materias.
-            </Text>
-          </View>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Ir a mi perfil"
+            onPress={() => router.push("/student-profile")}
+            style={({ pressed }) => [
+              styles.profileButton,
+              { backgroundColor: colors.secondary },
+              pressed && styles.cardPressed,
+            ]}
+          >
+            <Ionicons name="person-outline" size={30} color={colors.white} />
+          </Pressable>
         </View>
 
         {/* ACCESOS PRINCIPALES */}
-        <Text style={styles.sectionTitle}>
-          Accesos rápidos
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>
+          ¿Qué necesitás consultar?
         </Text>
 
         <View style={styles.cardsContainer}>
           {/* ASISTENCIA */}
           <Pressable
-            style={({ pressed }) => [
-              styles.card,
-              pressed && styles.cardPressed,
-            ]}
+            accessibilityRole="button"
+            accessibilityLabel="Consultar asistencia"
             onPress={() => router.push("/attendance")}
+            style={({ pressed }) => pressed && styles.cardPressed}
           >
-            <View
+            <AppCard
+              padding={16}
               style={[
-                styles.cardIcon,
-                { backgroundColor: "#4070B2" },
+                styles.card,
+                {
+                  backgroundColor: `${colors.accent}18`,
+                  borderLeftWidth: 5,
+                  borderLeftColor: colors.accent,
+                },
               ]}
             >
+              <View
+                style={[
+                  styles.cardIcon,
+                  { backgroundColor: `${colors.accent}30` },
+                ]}
+              >
+                <Ionicons
+                  name="calendar-outline"
+                  size={30}
+                  color={colors.accent}
+                />
+              </View>
+
+              <View style={styles.cardContent}>
+                <Text style={[styles.cardTitle, { color: colors.text }]}>
+                  Asistencia
+                </Text>
+
+                <Text
+                  style={[
+                    styles.cardDescription,
+                    { color: colors.textSecondary },
+                  ]}
+                >
+                  Registrá y consultá tu asistencia.
+                </Text>
+              </View>
+
               <Ionicons
-                name="calendar-outline"
-                size={26}
-                color="#FFFFFF"
+                name="chevron-forward"
+                size={24}
+                color={colors.accent}
               />
-            </View>
-
-            <View style={styles.cardContent}>
-              <Text style={styles.cardTitle}>
-                Asistencia
-              </Text>
-
-              <Text style={styles.cardDescription}>
-                Registrar y consultar asistencia.
-              </Text>
-            </View>
-
-            <Ionicons
-              name="chevron-forward"
-              size={22}
-              color="#9CA3AF"
-            />
+            </AppCard>
           </Pressable>
 
           {/* MATERIAS */}
           <Pressable
-            style={({ pressed }) => [
-              styles.card,
-              pressed && styles.cardPressed,
-            ]}
+            accessibilityRole="button"
+            accessibilityLabel="Consultar mis materias"
+            onPress={() => router.push("/student-subjects")}
+            style={({ pressed }) => pressed && styles.cardPressed}
           >
-            <View
+            <AppCard
+              padding={16}
               style={[
-                styles.cardIcon,
-                { backgroundColor: "#9DC45B" },
+                styles.card,
+                {
+                  backgroundColor: `${colors.success}18`,
+                  borderLeftWidth: 5,
+                  borderLeftColor: colors.success,
+                },
               ]}
             >
+              <View
+                style={[
+                  styles.cardIcon,
+                  { backgroundColor: `${colors.success}30` },
+                ]}
+              >
+                <Ionicons
+                  name="book-outline"
+                  size={30}
+                  color={colors.success}
+                />
+              </View>
+
+              <View style={styles.cardContent}>
+                <Text style={[styles.cardTitle, { color: colors.text }]}>
+                  Mis materias
+                </Text>
+
+                <Text
+                  style={[
+                    styles.cardDescription,
+                    { color: colors.textSecondary },
+                  ]}
+                >
+                  Consultá tus materias y comisiones.
+                </Text>
+              </View>
+
               <Ionicons
-                name="book-outline"
-                size={26}
-                color="#FFFFFF"
+                name="chevron-forward"
+                size={24}
+                color={colors.success}
               />
-            </View>
-
-            <View style={styles.cardContent}>
-              <Text style={styles.cardTitle}>
-                Mis materias
-              </Text>
-
-              <Text style={styles.cardDescription}>
-                Consultá tus materias y comisiones.
-              </Text>
-            </View>
-
-            <Ionicons
-              name="chevron-forward"
-              size={22}
-              color="#9CA3AF"
-            />
+            </AppCard>
           </Pressable>
-
-          {/* ESTADO ACADÉMICO */}
-          <Pressable
-            style={({ pressed }) => [
-              styles.card,
-              pressed && styles.cardPressed,
-            ]}
-          >
-            <View
-              style={[
-                styles.cardIcon,
-                { backgroundColor: "#4070B2" },
-              ]}
-            >
-              <Ionicons
-                name="school-outline"
-                size={26}
-                color="#FFFFFF"
-              />
-            </View>
-
-            <View style={styles.cardContent}>
-              <Text style={styles.cardTitle}>
-                Estado académico
-              </Text>
-
-              <Text style={styles.cardDescription}>
-                Consultá tus notas y situación académica.
-              </Text>
-            </View>
-
-            <Ionicons
-              name="chevron-forward"
-              size={22}
-              color="#9CA3AF"
-            />
-          </Pressable>
-
-          {/* HISTORIAL ACADÉMICO */}
-          <Pressable
-            style={({ pressed }) => [
-              styles.card,
-              pressed && styles.cardPressed,
-            ]}
-          >
-            <View
-              style={[
-                styles.cardIcon,
-                { backgroundColor: "#9DC45B" },
-              ]}
-            >
-              <Ionicons
-                name="time-outline"
-                size={26}
-                color="#FFFFFF"
-              />
-            </View>
-
-            <View style={styles.cardContent}>
-              <Text style={styles.cardTitle}>
-                Historial académico
-              </Text>
-
-              <Text style={styles.cardDescription}>
-                Revisá tu trayectoria académica.
-              </Text>
-            </View>
-
-            <Ionicons
-              name="chevron-forward"
-              size={22}
-              color="#9CA3AF"
-            />
-          </Pressable>
-        </View>
-
-        {/* INFORMACIÓN */}
-        <View style={styles.infoCard}>
-          <Ionicons
-            name="information-circle-outline"
-            size={22}
-            color="#4070B2"
-          />
-
-          <Text style={styles.infoText}>
-            Desde aquí podrás acceder a toda tu información académica.
-          </Text>
         </View>
 
         {/* CERRAR SESIÓN */}
-        <LogoutButton />
+        <View style={styles.logoutContainer}>
+          <LogoutButton />
+        </View>
       </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  // Colores institucionales del ITS
-  // Azul: #4070B2
-  // Verde: #9DC45B
-
   container: {
     flex: 1,
-    backgroundColor: "#F4F7FB",
   },
 
   scrollContent: {
+    flexGrow: 1,
     paddingHorizontal: 20,
     paddingTop: 55,
-    paddingBottom: 40,
+    paddingBottom: 30,
   },
-
-  /* ENCABEZADO */
 
   header: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 28,
+    justifyContent: "space-between",
+    marginBottom: 38,
   },
 
   headerText: {
     flex: 1,
-    marginRight: 12,
   },
 
   greeting: {
     fontSize: 28,
     fontWeight: "800",
-    color: "#1F2937",
+    letterSpacing: -0.5,
   },
 
-  institution: {
-    fontSize: 14,
-    color: "#6B7280",
+  subtitle: {
+    fontSize: 16,
+    fontWeight: "700",
     marginTop: 5,
   },
 
-  logoContainer: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: "#4070B2",
+  profileButton: {
+    width: 58,
+    height: 58,
     alignItems: "center",
     justifyContent: "center",
   },
-
-  logoText: {
-    color: "#FFFFFF",
-    fontSize: 18,
-    fontWeight: "900",
-    letterSpacing: 1,
-  },
-
-  /* TARJETA DE BIENVENIDA */
-
-  welcomeCard: {
-    backgroundColor: "#4070B2",
-    borderRadius: 18,
-    padding: 20,
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 30,
-  },
-
-  welcomeIcon: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: "rgba(255,255,255,0.18)",
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 15,
-  },
-
-  welcomeContent: {
-    flex: 1,
-  },
-
-  welcomeTitle: {
-    color: "#FFFFFF",
-    fontSize: 18,
-    fontWeight: "800",
-    marginBottom: 5,
-  },
-
-  welcomeText: {
-    color: "#EAF1FA",
-    fontSize: 13,
-    lineHeight: 19,
-  },
-
-  /* SECCIÓN */
 
   sectionTitle: {
-    fontSize: 20,
+    fontSize: 21,
     fontWeight: "800",
-    color: "#1F2937",
-    marginBottom: 14,
+    marginBottom: 18,
   },
 
-  /* TARJETAS */
-
   cardsContainer: {
-    gap: 12,
+    gap: 16,
   },
 
   card: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    padding: 16,
+    minHeight: 112,
     flexDirection: "row",
     alignItems: "center",
-
-    shadowColor: "#000",
-
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-
-    elevation: 2,
   },
 
   cardPressed: {
-    opacity: 0.8,
+    opacity: 0.75,
   },
 
   cardIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
+    width: 58,
+    height: 58,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 14,
+    marginRight: 16,
   },
 
   cardContent: {
@@ -371,34 +240,17 @@ const styles = StyleSheet.create({
   },
 
   cardTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#1F2937",
-    marginBottom: 4,
+    fontSize: 18,
+    fontWeight: "800",
+    marginBottom: 6,
   },
 
   cardDescription: {
-    fontSize: 12,
-    color: "#6B7280",
-    lineHeight: 17,
+    fontSize: 13,
+    lineHeight: 19,
   },
 
-  /* INFORMACIÓN */
-
-  infoCard: {
-    marginTop: 24,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 14,
-    padding: 16,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
-
-  infoText: {
-    flex: 1,
-    color: "#6B7280",
-    fontSize: 12,
-    lineHeight: 18,
+  logoutContainer: {
+    marginTop: 32,
   },
 });

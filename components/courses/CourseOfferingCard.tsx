@@ -1,144 +1,101 @@
-
 import { Ionicons } from "@expo/vector-icons";
-import {
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import { AppCard } from "@/components/ui/AppCard";
 import type { CourseOffering } from "@/features/courses/courses.types";
-import { COLORS, DARK_COLORS } from "@/constants/theme";
-import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useAppTheme } from "@/features/theme/theme.provider";
 
 type Props = {
   course: CourseOffering;
   onPress: () => void;
+  cardColor?: string;
 };
 
-export function CourseOfferingCard({
-  course,
-  onPress,
-}: Props) {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
-  const theme = isDark ? DARK_COLORS : COLORS;
+export function CourseOfferingCard({ course, onPress, cardColor }: Props) {
+  const { colors } = useAppTheme();
+
+  const accentColor = cardColor ?? colors.secondary;
 
   return (
     <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`Abrir cursada ${course.subject.name}, comisión ${course.commission}`}
       onPress={onPress}
-      style={({ pressed }) => [
-        styles.card,
-        {
-          backgroundColor: theme.primary,
-          shadowColor: isDark ? "#000000" : theme.primary,
-        },
-        pressed && styles.cardPressed,
-      ]}
+      style={({ pressed }) => [styles.pressable, pressed && styles.pressed]}
     >
-      <View
+      <AppCard
+        padding={10}
         style={[
-          styles.iconContainer,
+          styles.card,
           {
-            backgroundColor: theme.surface,
+            backgroundColor: colors.surface,
+            borderColor: colors.border,
+            borderLeftColor: accentColor,
           },
         ]}
       >
-        <Ionicons
-          name="book-outline"
-          size={26}
-          color={theme.primary}
-        />
-      </View>
-
-      <View style={styles.content}>
-        <Text
-          style={[styles.name, { color: "#FFFFFF" }]}
-          numberOfLines={2}
-        >
-          {course.subject.name}
-        </Text>
-
-        <Text
+        <View
           style={[
-            styles.code,
-            { color: isDark ? "#DCE7FF" : "#DBEAFE" },
+            styles.iconContainer,
+            { backgroundColor: `${accentColor}25` },
           ]}
         >
-          {course.subject.code}
-        </Text>
+          <Ionicons name="book-outline" size={32} color={accentColor} />
+        </View>
 
-        <Text
-          style={[styles.commission, { color: "#FFFFFF" }]}
-        >
-          Comisión {course.commission}
-        </Text>
+        <View style={styles.content}>
+          <Text style={[styles.name, { color: colors.text }]} numberOfLines={2}>
+            {course.subject.name}
+          </Text>
 
-        <Text
-          style={[
-            styles.year,
-            { color: isDark ? "#DCE7FF" : "#DBEAFE" },
-          ]}
-        >
-          {course.academicYear.name}
-        </Text>
-      </View>
+          <Text style={[styles.code, { color: colors.textSecondary }]}>
+            {course.subject.code}
+          </Text>
 
-      <View
-        style={[
-          styles.arrowContainer,
-          { backgroundColor: theme.accent },
-        ]}
-      >
-        <Ionicons
-          name="arrow-forward"
-          size={21}
-          color="#FFFFFF"
-        />
-      </View>
+          <Text style={[styles.commission, { color: colors.text }]}>
+            Comisión {course.commission}
+          </Text>
+
+          <Text style={[styles.year, { color: colors.textSecondary }]}>
+            {course.academicYear.name}
+          </Text>
+        </View>
+
+        <View style={styles.arrowContainer}>
+          <Ionicons name="chevron-forward" size={25} color={accentColor} />
+        </View>
+      </AppCard>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    minHeight: 100,
-    paddingVertical: 12,
-    paddingLeft: 10,
-    paddingRight: 12,
-    flexDirection: "row",
-    alignItems: "center",
-    borderTopLeftRadius: 34,
-    borderBottomRightRadius: 34,
-    borderTopRightRadius: 2,
-    borderBottomLeftRadius: 2,
-    elevation: 4,
-    shadowOffset: {
-      width: 0,
-      height: 3,
-    },
-    shadowOpacity: 0.16,
-    shadowRadius: 5,
-    overflow: "hidden",
+  pressable: {
+    width: "100%",
   },
 
-  cardPressed: {
-    opacity: 0.86,
-    transform: [{ scale: 0.985 }],
+  card: {
+    minHeight: 108,
+    flexDirection: "row",
+    alignItems: "center",
+    borderRadius: 0,
+    borderLeftWidth: 6,
+    borderWidth: 1,
   },
 
   iconContainer: {
-    width: 58,
-    height: 58,
-    borderRadius: 29,
+    width: 56,
+    height: 56,
+    borderRadius: 0,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 13,
   },
 
   content: {
     flex: 1,
-    paddingVertical: 4,
+    paddingVertical: 2,
+    marginLeft: 12,
+    gap: 2,
   },
 
   name: {
@@ -147,30 +104,28 @@ const styles = StyleSheet.create({
   },
 
   code: {
-    marginTop: 3,
     fontSize: 12,
     fontWeight: "500",
   },
 
   commission: {
-    marginTop: 6,
+    marginTop: 2,
     fontSize: 12,
     fontWeight: "700",
   },
 
   year: {
-    marginTop: 3,
     fontSize: 12,
   },
 
   arrowContainer: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    width: 26,
     alignItems: "center",
     justifyContent: "center",
-    marginLeft: 8,
+    marginLeft: 4,
+  },
+
+  pressed: {
+    opacity: 0.8,
   },
 });
-
-

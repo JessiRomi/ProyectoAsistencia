@@ -1,24 +1,31 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
-import {
-  ActivityIndicator,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { useState } from "react";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
+import { AppButton } from "@/components/ui/AppButton";
+import { AppCard } from "@/components/ui/AppCard";
+import { FeedbackState } from "@/components/ui/FeedbackState";
+import { useAppTheme } from "@/features/theme/theme.provider";
 import { useTeacherCourses } from "@/features/courses/useTeacherCourses";
 
-export default function TeacherCourseScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+type CourseAction = {
+  title: string;
+  description: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  color: string;
+  onPress: () => void;
+};
 
-  const {
-    courses,
-    isLoading,
-    error,
-  } = useTeacherCourses();
+export default function TeacherCourseScreen() {
+  const { colors } = useAppTheme();
+  const [isInfoExpanded, setIsInfoExpanded] = useState(false);
+
+  const params = useLocalSearchParams<{ id?: string | string[] }>();
+
+  const id = Array.isArray(params.id) ? params.id[0] : params.id;
+
+  const { courses, isLoading, error } = useTeacherCourses();
 
   const course = courses.find((item) => item.id === id);
 
@@ -29,22 +36,7 @@ export default function TeacherCourseScreen() {
 
     router.push({
       pathname: "/teacher/new-class",
-      params: {
-        id,
-      },
-    });
-  }
-
-  function openAttendance() {
-    if (!id) {
-      return;
-    }
-
-    router.push({
-      pathname: "/teacher/attendance",
-      params: {
-        id,
-      },
+      params: { id },
     });
   }
 
@@ -55,9 +47,7 @@ export default function TeacherCourseScreen() {
 
     router.push({
       pathname: "/teacher/course-students",
-      params: {
-        id,
-      },
+      params: { id },
     });
   }
 
@@ -68,339 +58,329 @@ export default function TeacherCourseScreen() {
 
     router.push({
       pathname: "/teacher/course-sessions",
-      params: {
-        id,
-      },
+      params: { id },
     });
   }
 
   if (isLoading) {
     return (
-      <View style={styles.centerContainer}>
-        <ActivityIndicator
-          size="large"
-          color="#4070B2"
-        />
-
-        <Text style={styles.loadingText}>
-          Cargando información de la cursada...
-        </Text>
-      </View>
+      <FeedbackState
+        type="loading"
+        message="Cargando información de la cursada..."
+      />
     );
   }
 
   if (error) {
     return (
-      <View style={styles.centerContainer}>
-        <Text style={styles.errorTitle}>
-          No se pudo cargar la cursada
-        </Text>
+      <View
+        style={[styles.stateContainer, { backgroundColor: colors.background }]}
+      >
+        <FeedbackState type="error" message={error} />
 
-        <Text style={styles.errorText}>
-          {error}
-        </Text>
-
-        <Pressable
-          style={styles.retryButton}
+        <AppButton
+          label="Volver"
+          icon="arrow-back"
           onPress={() => router.back()}
-        >
-          <Text style={styles.retryButtonText}>
-            Volver
-          </Text>
-        </Pressable>
+          variant="secondary"
+          size="medium"
+        />
       </View>
     );
   }
 
   if (!course) {
     return (
-      <View style={styles.centerContainer}>
-        <Text style={styles.errorTitle}>
-          Cursada no encontrada
-        </Text>
+      <View
+        style={[styles.stateContainer, { backgroundColor: colors.background }]}
+      >
+        <FeedbackState
+          type="empty"
+          message="No se encontró la cursada seleccionada."
+        />
 
-        <Text style={styles.errorText}>
-          No se encontró la cursada seleccionada.
-        </Text>
-
-        <Pressable
-          style={styles.retryButton}
+        <AppButton
+          label="Volver a mis cursadas"
+          icon="arrow-back"
           onPress={() => router.back()}
-        >
-          <Text style={styles.retryButtonText}>
-            Volver a mis cursadas
-          </Text>
-        </Pressable>
+          variant="secondary"
+          size="medium"
+        />
       </View>
     );
   }
 
   const schedule = course.scheduleSlots?.[0];
 
+  const actions: CourseAction[] = [
+    {
+      title: "Crear nueva clase",
+      description: "Registrar una nueva sesión para esta cursada.",
+      icon: "add-circle-outline",
+      color: colors.accent,
+      onPress: openNewClass,
+    },
+    {
+      title: "Ver estudiantes",
+      description: "Consultar los alumnos inscriptos en esta cursada.",
+      icon: "people-outline",
+      color: colors.success,
+      onPress: openStudents,
+    },
+
+    {
+      title: "Historial de clases",
+      description: "Consultar las sesiones registradas de esta cursada.",
+      icon: "time-outline",
+      color: colors.secondary,
+      onPress: openSessions,
+    },
+  ];
+
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Volver */}
-        <Pressable
-          style={styles.backRow}
-          onPress={() => router.back()}
-        >
-          <Ionicons
-            name="arrow-back"
-            size={22}
-            color="#4070B2"
-          />
+        <View style={styles.courseHeaderRow}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Volver a mis cursadas"
+            onPress={() => router.back()}
+            style={({ pressed }) => [
+              styles.backButton,
+              pressed && styles.actionPressed,
+            ]}
+          >
+            <Ionicons name="arrow-back" size={25} color={colors.text} />
+          </Pressable>
 
-          <Text style={styles.backText}>
-            Mis cursadas
-          </Text>
-        </Pressable>
+          <View style={styles.header}>
+            <View
+              style={[styles.headerIcon, { backgroundColor: colors.primary }]}
+            >
+              <Ionicons name="book-outline" size={30} color={colors.white} />
+            </View>
 
-        {/* Encabezado */}
-        <View style={styles.header}>
-          <View style={styles.headerIcon}>
+            <View style={styles.headerContent}>
+              <Text style={[styles.title, { color: colors.text }]}>
+                {course.subject.name}
+              </Text>
+
+              <Text style={[styles.code, { color: colors.textSecondary }]}>
+                {course.subject.code}
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        <AppCard style={styles.infoCard}>
+          <Pressable
+            onPress={() => setIsInfoExpanded((current) => !current)}
+            accessibilityRole="button"
+            accessibilityLabel="Información de la cursada"
+            accessibilityState={{ expanded: isInfoExpanded }}
+            style={styles.infoHeader}
+          >
             <Ionicons
-              name="book-outline"
-              size={32}
-              color="#FFFFFF"
+              name="information-circle-outline"
+              size={25}
+              color={colors.secondary}
             />
-          </View>
 
-          <View style={styles.headerContent}>
-            <Text style={styles.title}>
-              {course.subject.name}
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>
+              Información de la cursada
             </Text>
 
-            <Text style={styles.code}>
-              {course.subject.code}
-            </Text>
-          </View>
-        </View>
-
-        {/* Información */}
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>
-            Información de la cursada
-          </Text>
-
-          <InfoRow
-            icon="people-outline"
-            label="Comisión"
-            value={course.commission}
-          />
-
-          <InfoRow
-            icon="time-outline"
-            label="Turno"
-            value={formatShift(course.shift)}
-          />
-
-          <InfoRow
-            icon="calendar-outline"
-            label="Ciclo lectivo"
-            value={course.academicYear.name}
-          />
-
-          <InfoRow
-            icon="school-outline"
-            label="Año académico"
-            value={String(course.academicYear.year)}
-          />
-
-          {schedule?.dayOfWeek !== undefined && (
-            <InfoRow
-              icon="calendar-outline"
-              label="Día"
-              value={formatDay(schedule.dayOfWeek)}
+            <Ionicons
+              name={isInfoExpanded ? "chevron-up" : "chevron-down"}
+              size={22}
+              color={colors.secondary}
             />
-          )}
+          </Pressable>
 
-          {schedule?.startTime && schedule?.endTime && (
-            <InfoRow
-              icon="time-outline"
-              label="Horario"
-              value={`${schedule.startTime} - ${schedule.endTime}`}
-            />
-          )}
-
-          {schedule?.classroom && (
-            <InfoRow
-              icon="location-outline"
-              label="Aula"
-              value={schedule.classroom}
-            />
-          )}
-
-          {course.classroom &&
-            !schedule?.classroom && (
+          {isInfoExpanded && (
+            <View style={styles.infoDetails}>
               <InfoRow
-                icon="location-outline"
-                label="Aula"
-                value={course.classroom}
+                icon="people-outline"
+                label="Comisión"
+                value={course.commission}
+                iconColor={colors.secondary}
               />
-            )}
 
-          {course.maxCapacity !== undefined && (
-            <InfoRow
-              icon="people-circle-outline"
-              label="Capacidad"
-              value={`${course.maxCapacity} estudiantes`}
-              last
-            />
+              <InfoRow
+                icon="time-outline"
+                label="Turno"
+                value={formatShift(course.shift)}
+                iconColor={colors.accent}
+              />
+
+              <InfoRow
+                icon="calendar-outline"
+                label="Ciclo lectivo"
+                value={course.academicYear.name}
+                iconColor={colors.success}
+              />
+
+              <InfoRow
+                icon="school-outline"
+                label="Año académico"
+                value={String(course.academicYear.year)}
+                iconColor={colors.secondary}
+              />
+
+              {schedule?.dayOfWeek !== undefined && (
+                <InfoRow
+                  icon="calendar-outline"
+                  label="Día"
+                  value={formatDay(schedule.dayOfWeek)}
+                  iconColor={colors.accent}
+                />
+              )}
+
+              {schedule?.startTime && schedule?.endTime && (
+                <InfoRow
+                  icon="time-outline"
+                  label="Horario"
+                  value={`${schedule.startTime} - ${schedule.endTime}`}
+                  iconColor={colors.success}
+                />
+              )}
+
+              {schedule?.classroom && (
+                <InfoRow
+                  icon="location-outline"
+                  label="Aula"
+                  value={schedule.classroom}
+                  iconColor={colors.secondary}
+                />
+              )}
+
+              {course.classroom && !schedule?.classroom && (
+                <InfoRow
+                  icon="location-outline"
+                  label="Aula"
+                  value={course.classroom}
+                  iconColor={colors.secondary}
+                />
+              )}
+
+              {course.maxCapacity !== undefined && (
+                <InfoRow
+                  icon="people-outline"
+                  label="Capacidad"
+                  value={`${course.maxCapacity} estudiantes`}
+                  iconColor={colors.accent}
+                  last
+                />
+              )}
+            </View>
           )}
-        </View>
+        </AppCard>
 
-        {/* Acciones */}
-        <Text style={styles.actionsTitle}>
+        <Text style={[styles.actionsTitle, { color: colors.text }]}>
           Gestión de la cursada
         </Text>
 
-        {/* Nueva clase */}
-        <Pressable
-          style={({ pressed }) => [
-            styles.actionCard,
-            pressed && styles.actionCardPressed,
-          ]}
-          onPress={openNewClass}
-        >
-          <View style={styles.actionIcon}>
-            <Ionicons
-              name="add-circle-outline"
-              size={27}
-              color="#FFFFFF"
-            />
-          </View>
+        <View style={styles.actionsContainer}>
+          {actions.map((action) => (
+            <Pressable
+              key={action.title}
+              onPress={action.onPress}
+              accessibilityRole="button"
+              style={({ pressed }) => [
+                styles.actionPressable,
+                pressed && styles.actionPressed,
+              ]}
+            >
+              <AppCard
+                style={[styles.actionCard, { borderLeftColor: action.color }]}
+              >
+                <View style={styles.actionContent}>
+                  <View
+                    style={[
+                      styles.actionIcon,
+                      { backgroundColor: `${action.color}20` },
+                    ]}
+                  >
+                    <Ionicons
+                      name={action.icon}
+                      size={24}
+                      color={action.color}
+                    />
+                  </View>
 
-          <View style={styles.actionContent}>
-            <Text style={styles.actionTitle}>
-              Crear nueva clase
-            </Text>
+                  <View style={styles.actionTextContent}>
+                    <Text style={[styles.actionTitle, { color: colors.text }]}>
+                      {action.title}
+                    </Text>
 
-            <Text style={styles.actionDescription}>
-              Registrar una nueva sesión para esta cursada.
-            </Text>
-          </View>
+                    <Text
+                      style={[
+                        styles.actionDescription,
+                        { color: colors.textSecondary },
+                      ]}
+                    >
+                      {action.description}
+                    </Text>
+                  </View>
 
-          <Ionicons
-            name="chevron-forward"
-            size={22}
-            color="#9CA3AF"
-          />
-        </Pressable>
-
-        {/* Estudiantes */}
-        <Pressable
-          style={({ pressed }) => [
-            styles.actionCard,
-            pressed && styles.actionCardPressed,
-          ]}
-          onPress={openStudents}
-        >
-          <View style={styles.actionIcon}>
-            <Ionicons
-              name="people-outline"
-              size={27}
-              color="#FFFFFF"
-            />
-          </View>
-
-          <View style={styles.actionContent}>
-            <Text style={styles.actionTitle}>
-              Ver estudiantes
-            </Text>
-
-            <Text style={styles.actionDescription}>
-              Consultar los alumnos inscriptos en esta cursada.
-            </Text>
-          </View>
-
-          <Ionicons
-            name="chevron-forward"
-            size={22}
-            color="#9CA3AF"
-          />
-        </Pressable>
-
-        {/* Asistencia */}
-        <Pressable
-          style={({ pressed }) => [
-            styles.actionCard,
-            pressed && styles.actionCardPressed,
-          ]}
-          onPress={openAttendance}
-        >
-          <View style={styles.actionIcon}>
-            <Ionicons
-              name="checkmark-done-outline"
-              size={27}
-              color="#FFFFFF"
-            />
-          </View>
-
-          <View style={styles.actionContent}>
-            <Text style={styles.actionTitle}>
-              Tomar asistencia
-            </Text>
-
-            <Text style={styles.actionDescription}>
-              Ver alumnos y registrar presente o ausente.
-            </Text>
-          </View>
-
-          <Ionicons
-            name="chevron-forward"
-            size={22}
-            color="#9CA3AF"
-          />
-        </Pressable>
-
-        {/* Historial */}
-        <Pressable
-          style={({ pressed }) => [
-            styles.actionCard,
-            pressed && styles.actionCardPressed,
-          ]}
-          onPress={openSessions}
-        >
-          <View style={styles.actionIcon}>
-            <Ionicons
-              name="time-outline"
-              size={27}
-              color="#FFFFFF"
-            />
-          </View>
-
-          <View style={styles.actionContent}>
-            <Text style={styles.actionTitle}>
-              Historial de clases
-            </Text>
-
-            <Text style={styles.actionDescription}>
-              Consultar las sesiones registradas de esta cursada.
-            </Text>
-          </View>
-
-          <Ionicons
-            name="chevron-forward"
-            size={22}
-            color="#9CA3AF"
-          />
-        </Pressable>
+                  <Ionicons
+                    name="chevron-forward"
+                    size={22}
+                    color={action.color}
+                  />
+                </View>
+              </AppCard>
+            </Pressable>
+          ))}
+        </View>
       </ScrollView>
     </View>
   );
 }
 
+function InfoRow({
+  icon,
+  label,
+  value,
+  iconColor,
+  last = false,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  value: string;
+  iconColor: string;
+  last?: boolean;
+}) {
+  const { colors } = useAppTheme();
+
+  return (
+    <View
+      style={[
+        styles.infoRow,
+        !last && {
+          borderBottomWidth: 1,
+          borderBottomColor: colors.border,
+        },
+      ]}
+    >
+      <Ionicons name={icon} size={20} color={iconColor} />
+
+      <View style={styles.infoContent}>
+        <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>
+          {label}
+        </Text>
+
+        <Text style={[styles.infoValue, { color: colors.text }]}>{value}</Text>
+      </View>
+    </View>
+  );
+}
+
 function formatShift(
-  shift:
-    | "MORNING"
-    | "AFTERNOON"
-    | "EVENING"
-    | "VIRTUAL"
-    | "MIXED",
+  shift: "MORNING" | "AFTERNOON" | "EVENING" | "VIRTUAL" | "MIXED",
 ) {
   const labels = {
     MORNING: "Mañana",
@@ -427,125 +407,52 @@ function formatDay(day: number) {
   return labels[day] ?? `Día ${day}`;
 }
 
-function InfoRow({
-  icon,
-  label,
-  value,
-  last = false,
-}: {
-  icon: keyof typeof Ionicons.glyphMap;
-  label: string;
-  value: string;
-  last?: boolean;
-}) {
-  return (
-    <View
-      style={[
-        styles.infoRow,
-        !last && styles.infoRowBorder,
-      ]}
-    >
-      <Ionicons
-        name={icon}
-        size={21}
-        color="#4070B2"
-      />
-
-      <View style={styles.infoContent}>
-        <Text style={styles.infoLabel}>
-          {label}
-        </Text>
-
-        <Text style={styles.infoValue}>
-          {value}
-        </Text>
-      </View>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F4F7FB",
   },
 
   scrollContent: {
     paddingHorizontal: 20,
-    paddingTop: 25,
+    paddingTop: 48,
     paddingBottom: 35,
   },
 
-  centerContainer: {
+  stateContainer: {
     flex: 1,
-    backgroundColor: "#F4F7FB",
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 30,
+    gap: 18,
   },
 
-  loadingText: {
-    marginTop: 12,
-    fontSize: 15,
-    color: "#6B7280",
-    textAlign: "center",
-  },
-
-  errorTitle: {
-    fontSize: 19,
-    fontWeight: "800",
-    color: "#1F2937",
-    textAlign: "center",
-  },
-
-  errorText: {
-    marginTop: 8,
-    fontSize: 14,
-    color: "#6B7280",
-    textAlign: "center",
-  },
-
-  retryButton: {
-    marginTop: 20,
-    backgroundColor: "#4070B2",
-    borderRadius: 10,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-  },
-
-  retryButtonText: {
-    color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: "700",
-  },
-
-  backRow: {
+  courseHeaderRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 7,
+    gap: 8,
+    marginTop: 29,
     marginBottom: 22,
   },
 
-  backText: {
-    color: "#4070B2",
-    fontSize: 14,
-    fontWeight: "700",
+  backButton: {
+    width: 38,
+    height: 58,
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   header: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 22,
+    gap: 14,
   },
 
   headerIcon: {
-    width: 62,
-    height: 62,
-    borderRadius: 18,
-    backgroundColor: "#4070B2",
+    width: 58,
+    height: 58,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 15,
   },
 
   headerContent: {
@@ -555,39 +462,39 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: "800",
-    color: "#1F2937",
   },
 
   code: {
     marginTop: 4,
     fontSize: 13,
-    color: "#6B7280",
   },
 
-  card: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 18,
+  infoCard: {
     paddingHorizontal: 18,
-    paddingTop: 18,
-    paddingBottom: 4,
+    paddingVertical: 14,
+  },
+
+  infoHeader: {
+    minHeight: 44,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
   },
 
   sectionTitle: {
+    flex: 1,
     fontSize: 18,
     fontWeight: "800",
-    color: "#1F2937",
-    marginBottom: 4,
+  },
+
+  infoDetails: {
+    marginTop: 10,
   },
 
   infoRow: {
     flexDirection: "row",
     alignItems: "center",
     paddingVertical: 15,
-  },
-
-  infoRowBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: "#EEF1F5",
   },
 
   infoContent: {
@@ -597,14 +504,12 @@ const styles = StyleSheet.create({
 
   infoLabel: {
     fontSize: 12,
-    color: "#9CA3AF",
   },
 
   infoValue: {
     marginTop: 2,
     fontSize: 15,
     fontWeight: "600",
-    color: "#1F2937",
   },
 
   actionsTitle: {
@@ -612,54 +517,51 @@ const styles = StyleSheet.create({
     marginBottom: 14,
     fontSize: 19,
     fontWeight: "800",
-    color: "#1F2937",
+  },
+
+  actionsContainer: {
+    gap: 12,
+  },
+
+  actionPressable: {
+    width: "100%",
+  },
+
+  actionPressed: {
+    opacity: 0.75,
   },
 
   actionCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    padding: 15,
-    marginBottom: 12,
-    flexDirection: "row",
-    alignItems: "center",
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.05,
-    shadowRadius: 7,
-  },
-
-  actionCardPressed: {
-    opacity: 0.8,
-  },
-
-  actionIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    backgroundColor: "#4070B2",
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 13,
+    padding: 14,
+    borderLeftWidth: 5,
+    borderLeftColor: "transparent",
   },
 
   actionContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 13,
+  },
+
+  actionIcon: {
+    width: 46,
+    height: 46,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  actionTextContent: {
     flex: 1,
   },
 
   actionTitle: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#1F2937",
   },
 
   actionDescription: {
     marginTop: 3,
     fontSize: 12,
-    color: "#6B7280",
     lineHeight: 17,
   },
 });

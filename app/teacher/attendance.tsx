@@ -1,7 +1,7 @@
+import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
-import React, { useState } from "react";
+import { useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
   FlatList,
   Pressable,
@@ -10,17 +10,24 @@ import {
   View,
 } from "react-native";
 
+import { AppButton } from "@/components/ui/AppButton";
+import { AppCard } from "@/components/ui/AppCard";
+import { FeedbackState } from "@/components/ui/FeedbackState";
 import { AttendanceStatusSelector } from "@/components/attendance/AttendanceStatusSelector";
 
+import { useAppTheme } from "@/features/theme/theme.provider";
+import { useCourseSessions } from "@/features/attendance/useCourseSessions";
+import { useAttendance } from "@/features/attendance/useAttendance";
 import { useCourseStudents } from "@/features/courses/useCourseStudents";
 import { useTeacherCourses } from "@/features/courses/useTeacherCourses";
-import { useAttendance } from "@/features/attendance/useAttendance";
 
 import type { AttendanceStatus } from "@/features/attendance/attendance.types";
 
 type AttendanceState = Record<string, AttendanceStatus>;
 
 export default function TeacherAttendanceScreen() {
+  const { colors } = useAppTheme();
+
   const params = useLocalSearchParams<{
     id?: string;
     sessionId?: string;
@@ -28,6 +35,17 @@ export default function TeacherAttendanceScreen() {
 
   const id = params.id;
   const sessionId = params.sessionId;
+
+  const {
+    sessions,
+    isLoading: isLoadingSessions,
+    error: sessionsError,
+  } = useCourseSessions(sessionId ? (id ?? "") : "");
+
+  const currentSession = sessions.find((session) => session.id === sessionId);
+
+  const isSessionClosed = currentSession?.status === "CLOSED";
+
   const { courses, isLoading: isLoadingCourses } = useTeacherCourses();
   const course = courses.find((item) => item.id === id);
 
@@ -62,6 +80,29 @@ export default function TeacherAttendanceScreen() {
   }
 
   async function handleSaveAttendance() {
+    if (sessionId) {
+      if (isLoadingSessions) {
+        Alert.alert("Un momento", "Estamos verificando el estado de la clase.");
+        return;
+      }
+
+      if (sessionsError || !currentSession) {
+        Alert.alert(
+          "No se puede guardar",
+          "No pudimos verificar el estado de la clase. Volvé al historial e intentá nuevamente.",
+        );
+        return;
+      }
+
+      if (currentSession.status !== "OPEN") {
+        Alert.alert(
+          "Clase cerrada",
+          "La asistencia de esta clase ya no se puede modificar.",
+        );
+        return;
+      }
+    }
+
     if (!id) {
       Alert.alert("Error", "No se encontró la cursada.");
       return;
@@ -78,17 +119,9 @@ export default function TeacherAttendanceScreen() {
     }));
 
     try {
-      /*
-       * Si llegamos desde "Crear nueva clase",
-       * usamos exactamente la sesión creada.
-       */
       if (sessionId) {
         await saveAttendanceForSession(sessionId, records);
       } else {
-        /*
-         * Mantenemos el flujo anterior para no romper
-         * la pantalla si se accede directamente.
-         */
         await saveAttendance(id, records);
       }
 
@@ -116,93 +149,181 @@ export default function TeacherAttendanceScreen() {
     }
   }
 
-  if (isLoadingCourses || isLoadingStudents) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" />
-
-        <Text style={styles.loadingText}>Cargando estudiantes...</Text>
-      </View>
-    );
+  if (
+    isLoadingCourses ||
+    isLoadingStudents ||
+    (sessionId && isLoadingSessions)
+  ) {
+    return <FeedbackState type="loading" message="Cargando estudiantes..." />;
   }
 
   if (!id) {
     return (
-      <View style={styles.center}>
-        <Text style={styles.errorText}>No se encontró la cursada.</Text>
+      <View style={[styles.center, { backgroundColor: colors.background }]}>
+        <Text style={[styles.errorText, { color: colors.error }]}>
+          No se encontró la cursada.
+        </Text>
       </View>
     );
   }
 
   if (studentsError) {
     return (
-      <View style={styles.center}>
-        <Text style={styles.errorText}>{studentsError}</Text>
+      <FeedbackState
+        type="error"
+        message={studentsError}
+        onRetry={reloadStudents}
+      />
+    );
+  }
 
-        <Pressable style={styles.retryButton} onPress={reloadStudents}>
-          <Text style={styles.retryButtonText}>Reintentar</Text>
-        </Pressable>
+  if (sessionId && (sessionsError || !currentSession)) {
+    return (
+      <View style={[styles.center, { backgroundColor: colors.background }]}>
+        <Text style={[styles.errorText, { color: colors.text }]}>
+          No se pudo verificar el estado de la clase. Volvé al historial e
+          intentá nuevamente.
+        </Text>
+
+        <AppButton
+          label="Volver al historial"
+          onPress={() => router.back()}
+          variant="secondary"
+          size="medium"
+        />
+      </View>
+    );
+  }
+
+  if (sessionId && isSessionClosed) {
+    return (
+      <View style={[styles.center, { backgroundColor: colors.background }]}>
+        <Text style={[styles.errorText, { color: colors.text }]}>
+          Esta clase está cerrada. La asistencia solo se puede consultar.
+        </Text>
+
+        <AppButton
+          label="Volver al historial"
+          onPress={() => router.back()}
+          variant="secondary"
+          size="medium"
+        />
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
-        <Text style={styles.title}>Tomar asistencia</Text>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Volver"
+          onPress={() => router.back()}
+          disabled={isSaving}
+          style={({ pressed }) => [
+            styles.backButton,
+            pressed && styles.backButtonPressed,
+          ]}
+        >
+          <Ionicons name="arrow-back" size={26} color={colors.text} />
+        </Pressable>
 
-        <Text style={styles.courseName}>
-          {course?.subject?.name ?? "Curso seleccionado"}
-        </Text>
+        <View style={styles.headerText}>
+          <Text style={[styles.title, { color: colors.text }]}>
+            Tomar asistencia
+          </Text>
 
-        {sessionId ? <Text style={styles.sessionInfo}>Nueva clase</Text> : null}
+          <Text style={[styles.courseName, { color: colors.textSecondary }]}>
+            {course?.subject?.name ?? "Curso seleccionado"}
+          </Text>
+
+          {sessionId ? (
+            <Text style={[styles.sessionInfo, { color: colors.secondary }]}>
+              Nueva clase
+            </Text>
+          ) : null}
+        </View>
       </View>
 
       <FlatList
         data={students}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
+        showsVerticalScrollIndicator={false}
         renderItem={({ item }) => (
-          <View style={styles.studentCard}>
+          <AppCard padding={16} style={styles.studentCard}>
             <View style={styles.studentInfo}>
-              <Text style={styles.studentName}>
-                {item.firstName} {item.lastName}
-              </Text>
+              <View style={styles.studentIcon}>
+                <Ionicons
+                  name="person-outline"
+                  size={23}
+                  color={colors.secondary}
+                />
+              </View>
 
-              {item.studentNumber ? (
-                <Text style={styles.studentNumber}>
-                  Legajo: {item.studentNumber}
+              <View style={styles.studentDetails}>
+                <Text style={[styles.studentName, { color: colors.text }]}>
+                  {item.firstName} {item.lastName}
                 </Text>
-              ) : null}
+
+                {item.studentNumber ? (
+                  <Text
+                    style={[
+                      styles.studentNumber,
+                      { color: colors.textSecondary },
+                    ]}
+                  >
+                    Legajo: {item.studentNumber}
+                  </Text>
+                ) : null}
+              </View>
             </View>
+
+            <View
+              style={[styles.statusDivider, { backgroundColor: colors.border }]}
+            />
+
+            <Text style={[styles.statusLabel, { color: colors.textSecondary }]}>
+              Estado de asistencia
+            </Text>
 
             <AttendanceStatusSelector
               status={attendanceWithDefaults[item.id]}
               onChange={(status) => handleStatusChange(item.id, status)}
             />
-          </View>
+          </AppCard>
         )}
+        ItemSeparatorComponent={() => <View style={styles.separator} />}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>
+            <Ionicons name="people-outline" size={38} color={colors.inactive} />
+
+            <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
               No hay estudiantes registrados en esta cursada.
             </Text>
           </View>
         }
       />
 
-      <View style={styles.footer}>
-        <Pressable
-          style={[styles.saveButton, isSaving && styles.saveButtonDisabled]}
+      <View
+        style={[
+          styles.footer,
+          {
+            backgroundColor: colors.surface,
+            borderTopColor: colors.border,
+          },
+        ]}
+      >
+        <AppButton
+          label="Guardar asistencia"
+          icon="checkmark-done"
           onPress={handleSaveAttendance}
+          variant="danger"
+          size="large"
+          fullWidth
+          loading={isSaving}
           disabled={isSaving}
-        >
-          {isSaving ? (
-            <ActivityIndicator color="#ffffff" />
-          ) : (
-            <Text style={styles.saveButtonText}>Guardar asistencia</Text>
-          )}
-        </Pressable>
+        />
       </View>
     </View>
   );
@@ -211,7 +332,6 @@ export default function TeacherAttendanceScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f7f8fa",
   },
 
   center: {
@@ -221,83 +341,118 @@ const styles = StyleSheet.create({
     padding: 24,
   },
 
-  loadingText: {
-    marginTop: 12,
-    fontSize: 16,
-    color: "#555",
-  },
-
   errorText: {
     fontSize: 16,
-    color: "#c62828",
     textAlign: "center",
     marginBottom: 16,
   },
 
   header: {
     paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 12,
+    paddingTop: 48,
+    paddingBottom: 22,
+    gap: 16,
+  },
+
+  backButton: {
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  backButtonPressed: {
+    opacity: 0.6,
+  },
+
+  headerText: {
+    gap: 6,
   },
 
   title: {
-    fontSize: 26,
-    fontWeight: "700",
-    color: "#111827",
+    fontSize: 28,
+    fontWeight: "900",
+    letterSpacing: -0.5,
   },
 
   courseName: {
-    marginTop: 6,
     fontSize: 16,
-    color: "#4b5563",
+    fontWeight: "600",
+    lineHeight: 22,
   },
 
   sessionInfo: {
-    marginTop: 4,
-    fontSize: 14,
-    color: "#2563eb",
-    fontWeight: "600",
+    marginTop: 2,
+    fontSize: 13,
+    fontWeight: "700",
   },
 
   listContent: {
     paddingHorizontal: 20,
-    paddingBottom: 120,
+    paddingTop: 4,
+    paddingBottom: 105,
+  },
+
+  separator: {
+    height: 12,
   },
 
   studentCard: {
-    backgroundColor: "#ffffff",
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
+    borderRadius: 0,
   },
 
   studentInfo: {
-    marginBottom: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginBottom: 15,
+  },
+
+  studentIcon: {
+    width: 48,
+    height: 48,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#2563EB20",
+  },
+
+  studentDetails: {
+    flex: 1,
+    gap: 5,
   },
 
   studentName: {
     fontSize: 17,
-    fontWeight: "600",
-    color: "#111827",
+    fontWeight: "800",
   },
 
   studentNumber: {
-    marginTop: 4,
     fontSize: 13,
-    color: "#6b7280",
+    fontWeight: "500",
+  },
+
+  statusDivider: {
+    height: 1,
+    marginBottom: 13,
+  },
+
+  statusLabel: {
+    fontSize: 12,
+    fontWeight: "700",
+    marginBottom: 10,
   },
 
   emptyContainer: {
-    paddingVertical: 40,
     alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 48,
+    gap: 12,
   },
 
   emptyText: {
-    fontSize: 15,
-    color: "#6b7280",
+    fontSize: 14,
     textAlign: "center",
+    lineHeight: 21,
   },
 
   footer: {
@@ -305,41 +460,9 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 20,
-    backgroundColor: "#ffffff",
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 12,
     borderTopWidth: 1,
-    borderTopColor: "#e5e7eb",
-  },
-
-  saveButton: {
-    height: 52,
-    borderRadius: 14,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#111827",
-  },
-
-  saveButtonDisabled: {
-    opacity: 0.6,
-  },
-
-  saveButtonText: {
-    color: "#ffffff",
-    fontSize: 16,
-    fontWeight: "700",
-  },
-
-  retryButton: {
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 10,
-    backgroundColor: "#111827",
-  },
-
-  retryButtonText: {
-    color: "#ffffff",
-    fontWeight: "600",
   },
 });

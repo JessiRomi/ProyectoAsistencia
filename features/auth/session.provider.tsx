@@ -1,84 +1,101 @@
-import {
-  createContext,
-  useEffect,
-  useState,
-  type ReactNode,
-} from "react";
-
+import { createContext, useEffect, useState, type ReactNode } from "react";
 import { authService } from "./auth.service";
 import type { User } from "./auth.types";
+
+function isSupportedRole(role: string): role is "STUDENT" | "TEACHER" {
+  return role === "STUDENT" || role === "TEACHER";
+}
 
 export interface AuthContextType {
   user: User | null;
   loading: boolean;
   isAuthenticated: boolean;
-
-  login: (
-    email: string,
-    password: string,
-  ) => Promise<User>;
-
+  login: (email: string, password: string) => Promise<User>;
   logout: () => Promise<void>;
 }
 
-export const AuthContext = createContext<
-  AuthContextType | undefined
->(undefined);
+export const AuthContext = createContext<AuthContextType | undefined>(
+  undefined,
+);
 
 interface AuthProviderProps {
   children: ReactNode;
 }
 
-export function AuthProvider({
-  children,
-}: AuthProviderProps) {
+export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   const isAuthenticated = user !== null;
 
   useEffect(() => {
-    checkSession();
+    let active = true;
+
+    async function initializeSession() {
+      try {
+        const token = await authService.getToken();
+
+        if (!token) {
+          if (active) {
+            setUser(null);
+          }
+          return;
+        }
+
+        const authenticatedUser = await authService.getMe();
+
+        if (!isSupportedRole(authenticatedUser.role)) {
+          await authService.logout();
+
+          if (active) {
+            setUser(null);
+          }
+
+          return;
+        }
+
+        if (active) {
+          setUser(authenticatedUser);
+        }
+      } catch (error) {
+        console.error("Error comprobando la sesión:", error);
+
+        try {
+          await authService.logout();
+        } catch (logoutError) {
+          console.error("Error limpiando la sesión:", logoutError);
+        }
+
+        if (active) {
+          setUser(null);
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    }
+
+    void initializeSession();
+
+    return () => {
+      active = false;
+    };
   }, []);
 
-  async function checkSession() {
-    try {
-      const token = await authService.getToken();
-
-      if (!token) {
-        setUser(null);
-        return;
-      }
-
-      const authenticatedUser =
-        await authService.getMe();
-
-      setUser(authenticatedUser);
-    } catch (error) {
-      console.error(
-        "Error comprobando la sesión:",
-        error,
-      );
-
-      await authService.logout();
-
-      setUser(null);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function login(
-    email: string,
-    password: string,
-  ): Promise<User> {
+  async function login(email: string, password: string): Promise<User> {
     const response = await authService.login({
       email,
       password,
     });
 
-    const authenticatedUser =
-      response.data.user;
+    const authenticatedUser = response.data.user;
+
+    if (!isSupportedRole(authenticatedUser.role)) {
+      await authService.logout();
+      setUser(null);
+      throw new Error("Tu perfil no tiene acceso a esta aplicación.");
+    }
 
     setUser(authenticatedUser);
 
@@ -87,7 +104,6 @@ export function AuthProvider({
 
   async function logout(): Promise<void> {
     await authService.logout();
-
     setUser(null);
   }
 

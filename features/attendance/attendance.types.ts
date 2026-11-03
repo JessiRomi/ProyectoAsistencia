@@ -57,16 +57,43 @@ export type AttendanceRecord = {
   };
 };
 
-/**
- * Registro de asistencia del estudiante.
- *
- * Devuelto por:
- * GET /students/me/attendance
+/*
+ Registro de asistencia del estudiante.
+ Devuelto por: GET /students/me/attendance
  */
 export type StudentAttendanceRecord = {
-  id?: string;
+  id: string;
   date?: string;
-  status?: "PRESENT" | "ABSENT";
+  classSessionId: string;
+  studentId: string;
+  status: AttendanceStatus;
+  observation?: string | null;
+  markedAt?: string;
+  markedByTeacherId?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  classSession: {
+    id: string;
+    courseOfferingId: string;
+    date: string;
+    topic?: string;
+    notes?: string | null;
+    status: ClassSessionStatus;
+    createdByTeacherId?: string;
+    createdAt?: string;
+    updatedAt?: string;
+    courseOffering: {
+      id: string;
+      commission: string;
+      subject: {
+        id: string;
+        name: string;
+        code: string;
+        year?: number;
+        semester?: number;
+      };
+    };
+  };
 };
 
 /**
@@ -75,6 +102,8 @@ export type StudentAttendanceRecord = {
 export type StudentAttendanceTotals = {
   PRESENT?: number;
   ABSENT?: number;
+  LATE?: number;
+  JUSTIFIED?: number;
 };
 
 /**
@@ -84,3 +113,4 @@ export type StudentAttendanceResponse = {
   records: StudentAttendanceRecord[];
   totals: StudentAttendanceTotals;
 };
+

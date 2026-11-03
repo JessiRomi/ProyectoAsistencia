@@ -2,7 +2,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useState } from "react";
 import {
-  ActivityIndicator,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -11,55 +10,24 @@ import {
   Text,
   TextInput,
   View,
-  useColorScheme,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { AppButton } from "@/components/ui/AppButton";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import { useAppTheme } from "@/features/theme/theme.provider";
 import { useSession } from "../features/auth/useSession";
 
 const ROLE_ROUTES = {
   STUDENT: "/(tabs)",
   TEACHER: "/teacher",
-  ACADEMIC: "/(tabs)",
-  ADMIN: "/(tabs)",
 } as const;
 
-const COLORS = {
-  light: {
-    background: "#F5F7FB",
-    surface: "#FFFFFF",
-    text: "#0B1F4D",
-    secondaryText: "#64748B",
-    border: "#D7E0EF",
-    inputBackground: "#FFFFFF",
-    primary: "#0B2D6B",
-    button: "#2563EB",
-    buttonPressed: "#0B2D6B",
-    accent: "#FF8A00",
-    error: "#DC2626",
-    icon: "#64748B",
-  },
-  dark: {
-    background: "#07152E",
-    surface: "#0E2145",
-    text: "#F5F7FB",
-    secondaryText: "#B8C5E0",
-    border: "#263F67",
-    inputBackground: "#07152E",
-    primary: "#2563EB",
-    button: "#2563EB",
-    buttonPressed: "#0B2D6B",
-    accent: "#FF8A00",
-    error: "#F87171",
-    icon: "#B8C5E0",
-  },
-};
-
 export default function LoginScreen() {
-  const { login } = useSession();
-
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === "dark";
-  const theme = isDark ? COLORS.dark : COLORS.light;
+  const { login, logout } = useSession();
+  const { mode, colors } = useAppTheme();
+  const insets = useSafeAreaInsets();
+  const isDark = mode === "dark";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -84,7 +52,15 @@ export default function LoginScreen() {
 
     try {
       const authenticatedUser = await login(email.trim(), password);
-      const route = ROLE_ROUTES[authenticatedUser.role];
+
+      if (!(authenticatedUser.role in ROLE_ROUTES)) {
+        await logout();
+        setError("Tu perfil no tiene acceso a esta aplicación.");
+        return;
+      }
+
+      const route =
+        ROLE_ROUTES[authenticatedUser.role as keyof typeof ROLE_ROUTES];
 
       router.replace(route);
     } catch (error) {
@@ -100,49 +76,61 @@ export default function LoginScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={[styles.container, { backgroundColor: theme.background }]}
+      style={[styles.container, { backgroundColor: colors.background }]}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
+      {/* Decoraciones geométricas de fondo */}
+      <View pointerEvents="none" style={styles.decorations}>
+        {/* Esquina superior derecha */}
+        <View style={[styles.decorationCircle, styles.topOrange]} />
+        <View style={[styles.decorationCircle, styles.topBlue]} />
+        <View style={[styles.decorationArc, styles.topGreenArc]} />
+
+        {/* Esquina superior izquierda */}
+        <View style={[styles.decorationArc, styles.leftOrangeArc]} />
+
+        {/* Esquina inferior izquierda */}
+        <View style={[styles.decorationCircle, styles.bottomOrange]} />
+        <View style={[styles.decorationCircle, styles.bottomBlue]} />
+
+        {/* Esquina inferior derecha */}
+        <View style={[styles.decorationCircle, styles.bottomGreen]} />
+        <View style={[styles.decorationArc, styles.bottomGreenArc]} />
+      </View>
+
+      {/* Selector de tema */}
+      <View style={[styles.themeToggleContainer, { top: insets.top + 12 }]}>
+        <ThemeToggle />
+      </View>
+
+      {/* Contenido principal */}
       <View style={styles.content}>
-        {/* Logo institucional */}
         <View style={styles.header}>
-          <View
-            style={[
-              styles.logoFrame,
-              {
-                backgroundColor: theme.surface,
-                borderColor: theme.border,
-              },
-            ]}
-          >
-            <Image
-              source={require("../assets/images/ITS_LOGO.png")}
-              style={styles.logo}
-              resizeMode="contain"
-            />
+          <Image
+            source={
+              isDark
+                ? require("../assets/images/ITS_LOGO_DARK.png")
+                : require("../assets/images/ITS_LOGO_LIGHT.png")
+            }
+            style={styles.logo}
+            resizeMode="contain"
+          />
+
+          <View style={styles.welcomeHeader}>
+            <Text style={[styles.welcomeTitle, { color: colors.text }]}>
+              Bienvenido
+            </Text>
+
+            <Text
+              style={[styles.welcomeSubtitle, { color: colors.textSecondary }]}
+            >
+              Iniciá sesión para continuar
+            </Text>
           </View>
         </View>
 
-        {/* Formulario de inicio de sesión */}
-        <View
-          style={[
-            styles.form,
-            {
-              backgroundColor: theme.surface,
-              borderColor: theme.border,
-            },
-          ]}
-        >
-          <Text style={[styles.formTitle, { color: theme.text }]}>
-            Iniciar sesión
-          </Text>
-
-          <Text style={[styles.formSubtitle, { color: theme.secondaryText }]}>
-            Ingresá tus datos para continuar
-          </Text>
-
-          {/* Correo electrónico */}
-          <Text style={[styles.label, { color: theme.text }]}>
+        <View style={styles.form}>
+          <Text style={[styles.label, { color: colors.text }]}>
             Correo electrónico
           </Text>
 
@@ -150,19 +138,23 @@ export default function LoginScreen() {
             style={[
               styles.inputContainer,
               {
-                backgroundColor: theme.inputBackground,
-                borderColor: theme.border,
+                backgroundColor: colors.surface,
+                borderColor: colors.border,
               },
             ]}
           >
-            <Ionicons name="mail-outline" size={23} color={theme.icon} />
+            <Ionicons
+              name="mail-outline"
+              size={23}
+              color={colors.textSecondary}
+            />
 
             <TextInput
-              style={[styles.input, { color: theme.text }]}
+              style={[styles.input, { color: colors.text }]}
               value={email}
               onChangeText={setEmail}
               placeholder="alumno@its.edu.ar"
-              placeholderTextColor={theme.secondaryText}
+              placeholderTextColor={colors.textSecondary}
               keyboardType="email-address"
               autoCapitalize="none"
               autoCorrect={false}
@@ -172,26 +164,29 @@ export default function LoginScreen() {
             />
           </View>
 
-          {/* Contraseña */}
-          <Text style={[styles.label, { color: theme.text }]}>Contraseña</Text>
+          <Text style={[styles.label, { color: colors.text }]}>Contraseña</Text>
 
           <View
             style={[
               styles.inputContainer,
               {
-                backgroundColor: theme.inputBackground,
-                borderColor: theme.border,
+                backgroundColor: colors.surface,
+                borderColor: colors.border,
               },
             ]}
           >
-            <Ionicons name="lock-closed-outline" size={23} color={theme.icon} />
+            <Ionicons
+              name="lock-closed-outline"
+              size={23}
+              color={colors.textSecondary}
+            />
 
             <TextInput
-              style={[styles.input, { color: theme.text }]}
+              style={[styles.input, { color: colors.text }]}
               value={password}
               onChangeText={setPassword}
               placeholder="Ingresá tu contraseña"
-              placeholderTextColor={theme.secondaryText}
+              placeholderTextColor={colors.textSecondary}
               secureTextEntry={!showPassword}
               autoCapitalize="none"
               autoCorrect={false}
@@ -213,18 +208,17 @@ export default function LoginScreen() {
               <Ionicons
                 name={showPassword ? "eye-off-outline" : "eye-outline"}
                 size={25}
-                color={theme.button}
+                color={colors.accent}
               />
             </Pressable>
           </View>
 
-          {/* Mensaje de error */}
           {error !== null && (
             <View
               style={[
                 styles.errorContainer,
                 {
-                  borderColor: theme.error,
+                  borderColor: colors.error,
                   backgroundColor: isDark ? "#301C2B" : "#FEF2F2",
                 },
               ]}
@@ -232,47 +226,27 @@ export default function LoginScreen() {
               <Ionicons
                 name="alert-circle-outline"
                 size={19}
-                color={theme.error}
+                color={colors.error}
               />
 
-              <Text style={[styles.error, { color: theme.error }]}>
+              <Text style={[styles.error, { color: colors.error }]}>
                 {error}
               </Text>
             </View>
           )}
 
-          {/* Botón de ingreso */}
-          <Pressable
-            style={({ pressed }) => [
-              styles.button,
-              { backgroundColor: theme.button },
-              loading && styles.buttonDisabled,
-              pressed &&
-                !loading && {
-                  backgroundColor: theme.buttonPressed,
-                },
-            ]}
-            onPress={handleLogin}
-            disabled={loading}
-            accessibilityRole="button"
-          >
-            {loading ? (
-              <View style={styles.loadingContainer}>
-                <ActivityIndicator color="#FFFFFF" size="small" />
-                <Text style={styles.buttonText}>Ingresando...</Text>
-              </View>
-            ) : (
-              <View style={styles.buttonContent}>
-                <Text style={styles.buttonText}>Ingresar</Text>
-
-                <View
-                  style={[styles.buttonIcon, { backgroundColor: theme.accent }]}
-                >
-                  <Ionicons name="arrow-forward" size={21} color="#FFFFFF" />
-                </View>
-              </View>
-            )}
-          </Pressable>
+          <View style={styles.buttonContainer}>
+            <AppButton
+              label="Ingresar"
+              icon="arrow-forward"
+              onPress={handleLogin}
+              variant="danger"
+              size="large"
+              fullWidth
+              loading={loading}
+              disabled={loading}
+            />
+          </View>
         </View>
       </View>
     </KeyboardAvoidingView>
@@ -282,138 +256,182 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    overflow: "hidden",
+  },
+
+  decorations: {
+    ...StyleSheet.absoluteFill,
+    overflow: "hidden",
+    zIndex: 0,
+  },
+
+  decorationCircle: {
+    position: "absolute",
+    borderRadius: 1000,
+  },
+
+  decorationArc: {
+    position: "absolute",
+    borderRadius: 1000,
+    backgroundColor: "transparent",
+    borderWidth: 2,
+  },
+
+  topOrange: {
+    width: 125,
+    height: 125,
+    backgroundColor: "#FF8A00",
+    top: -85,
+    right: 95,
+  },
+
+  topBlue: {
+    width: 150,
+    height: 150,
+    backgroundColor: "#2563EB",
+    top: -65,
+    right: -85,
+  },
+
+  topGreenArc: {
+    width: 100,
+    height: 100,
+    borderColor: "#9DC45B",
+    top: -58,
+    right: 40,
+  },
+
+  leftOrangeArc: {
+    width: 105,
+    height: 105,
+    borderColor: "#FF8A00",
+    top: 105,
+    left: -75,
+  },
+
+  bottomOrange: {
+    width: 130,
+    height: 130,
+    backgroundColor: "#FF8A00",
+    bottom: 65,
+    left: -90,
+  },
+
+  bottomBlue: {
+    width: 145,
+    height: 145,
+    backgroundColor: "#2563EB",
+    bottom: -95,
+    left: -75,
+  },
+
+  bottomGreen: {
+    width: 145,
+    height: 145,
+    backgroundColor: "#9DC45B",
+    bottom: -100,
+    right: -85,
+  },
+
+  bottomGreenArc: {
+    width: 105,
+    height: 105,
+    borderColor: "#9DC45B",
+    bottom: 20,
+    right: -55,
+  },
+
+  themeToggleContainer: {
+    position: "absolute",
+    right: 28,
+    zIndex: 3,
   },
 
   content: {
-    flexGrow: 1,
+    flex: 1,
     justifyContent: "center",
-    paddingHorizontal: 24,
-    paddingTop: 12,
-    paddingBottom: 12,
+    paddingHorizontal: 28,
+    paddingTop: 8,
+    paddingBottom: 24,
+    zIndex: 1,
   },
 
   header: {
-    alignItems: "center",
-    marginBottom: 36,
+    position: "relative",
+    marginBottom: 28,
   },
-  logoFrame: {
-    width: 268,
-    height: 176,
-    padding: 12,
-    borderWidth: 1,
-    borderRadius: 3,
-    alignItems: "center",
-    justifyContent: "center",
-  },
+
   logo: {
     width: "100%",
-    height: "100%",
+    maxWidth: 450,
+    height: 180,
+    alignSelf: "center",
+    marginBottom: 12,
   },
-  form: {
-    borderWidth: 1,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 3,
-    borderBottomLeftRadius: 3,
-    borderBottomRightRadius: 28,
-    padding: 24,
-    paddingTop: 28,
-    paddingBottom: 30,
-    shadowColor: "#000000",
-    shadowOffset: {
-      width: 0,
-      height: 5,
-    },
-    shadowOpacity: 0.12,
-    shadowRadius: 12,
-    elevation: 5,
+
+  welcomeHeader: {
+    alignSelf: "stretch",
+    gap: 5,
   },
-  formTitle: {
-    fontSize: 27,
+
+  welcomeTitle: {
+    fontSize: 28,
     fontWeight: "800",
-    marginBottom: 8,
+    letterSpacing: -0.5,
   },
-  formSubtitle: {
-    fontSize: 16,
-    fontWeight: "500",
-    marginBottom: 34,
-  },
-  label: {
+
+  welcomeSubtitle: {
     fontSize: 15,
-    fontWeight: "700",
-    marginBottom: 10,
+    fontWeight: "500",
   },
+
+  form: {
+    borderWidth: 0,
+    padding: 0,
+  },
+
+  label: {
+    fontSize: 14,
+    fontWeight: "700",
+    marginBottom: 7,
+  },
+
   inputContainer: {
-    minHeight: 58,
+    minHeight: 50,
     borderWidth: 1,
-    borderRadius: 3,
-    paddingHorizontal: 16,
+    borderRadius: 0,
+    paddingHorizontal: 14,
     flexDirection: "row",
     alignItems: "center",
-    gap: 14,
-    marginBottom: 30,
+    gap: 12,
+    marginBottom: 15,
   },
+
   input: {
     flex: 1,
     minWidth: 0,
     fontSize: 15,
     fontWeight: "500",
-    paddingVertical: 14,
+    paddingVertical: 11,
   },
+
   errorContainer: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
     padding: 12,
     borderWidth: 1,
-    borderRadius: 8,
+    borderRadius: 0,
     marginBottom: 12,
   },
+
   error: {
     flex: 1,
     fontSize: 13,
     fontWeight: "500",
   },
-  button: {
-    minHeight: 60,
-    borderTopLeftRadius: 34,
-    borderTopRightRadius: 3,
-    borderBottomLeftRadius: 3,
-    borderBottomRightRadius: 34,
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 6,
-    overflow: "hidden",
-  },
-  buttonDisabled: {
-    opacity: 0.75,
-  },
-  buttonContent: {
-    width: "100%",
-    minHeight: 60,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingLeft: 24,
-    paddingRight: 8,
-  },
-  buttonText: {
-    color: "#FFFFFF",
-    fontSize: 17,
-    fontWeight: "800",
-  },
-  buttonIcon: {
-    position: "absolute",
-    right: 8,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  loadingContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 12,
+
+  buttonContainer: {
+    marginTop: 8,
   },
 });

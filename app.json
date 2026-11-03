@@ -17,7 +17,8 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.anonymous.itsasistencia"
     },
     "web": {
       "output": "static",
@@ -28,12 +29,13 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/ITS_LOGO.jpg",
-          "imageWidth": 200,
+          "image": "./assets/images/ITS_LOGO_LIGHT.png",
+          "imageWidth": 220,
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff",
+          "backgroundColor": "#F5F7FB",
           "dark": {
-            "backgroundColor": "#000000"
+            "image": "./assets/images/ITS_LOGO_DARK.png",
+            "backgroundColor": "#07152E"
           }
         }
       ],
@@ -41,11 +43,28 @@
       "expo-font",
       "expo-image",
       "expo-status-bar",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "ITS Asistencia utiliza tu ubicación para validar el registro de asistencia."
+        }
+      ]
     ],
+
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {
+        "asyncRoutes": {
+          "web": true
+        }
+      },
+      "eas": {
+        "projectId": "93309d2e-95ec-4936-804a-ca32f6697e58"
+      }
     }
   }
 }

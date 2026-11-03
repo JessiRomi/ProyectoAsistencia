@@ -1,10 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import Svg, { Polygon } from "react-native-svg";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { Stack, router } from "expo-router";
-import { useQrScanner } from "@/features/attendance/useQrScanner";
-import GeometricActionButton from "@/components/attendance/GeometricActionButton";
-
 import {
   ActivityIndicator,
   Pressable,
@@ -14,73 +10,105 @@ import {
   View,
 } from "react-native";
 
-const COLORS = {
-  navy: "#082B68",
-  navyDark: "#07152E",
-  blue: "#1266FF",
-  blueLight: "#DBEAFE",
-  orange: "#FF9200",
-  background: "#F4F7FB",
-  white: "#FFFFFF",
-  text: "#0B1F4D",
-  secondary: "#64748B",
-  border: "#D7E0EF",
-  notice: "#FFF3D6",
-  noticeText: "#854D0E",
-};
+import { AppButton } from "@/components/ui/AppButton";
+import { AppCard } from "@/components/ui/AppCard";
+import { RouteGuard } from "@/components/auth/RouteGuard";
+import { useQrScanner } from "@/features/attendance/useQrScanner";
+import { useAppTheme } from "@/features/theme/theme.provider";
 
 export default function QrScannerScreen() {
+  return (
+    <RouteGuard allowedRoles={["STUDENT"]}>
+      <QrScannerContent />
+    </RouteGuard>
+  );
+}
+
+function QrScannerContent() {
+  const { colors } = useAppTheme();
   const [permission, requestPermission] = useCameraPermissions();
-  const { value, enabled, onScanned, reset } = useQrScanner();
+  const { value, enabled, status, error, onScanned, reset } = useQrScanner();
+
   if (!permission) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color={COLORS.blue} />
-        <Text style={styles.message}>Comprobando permiso de cámara...</Text>
+      <View style={[styles.center, { backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color={colors.secondary} />
+        <Text style={[styles.message, { color: colors.textSecondary }]}>
+          Comprobando permiso de cámara...
+        </Text>
       </View>
     );
   }
 
   if (!permission.granted) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
         <Stack.Screen options={{ headerShown: false }} />
+
         <Header />
+
         <View style={styles.permissionContent}>
-          <View style={styles.iconPanel}>
-            <Ionicons name="camera-outline" size={42} color={COLORS.blue} />
+          <View
+            style={[
+              styles.iconPanel,
+              { backgroundColor: colors.surface, borderColor: colors.border },
+            ]}
+          >
+            <Ionicons
+              name="camera-outline"
+              size={42}
+              color={colors.secondary}
+            />
           </View>
-          <Text style={styles.title}>Acceso a la cámara</Text>
-          <Text style={styles.message}>
+
+          <Text style={[styles.title, { color: colors.text }]}>
+            Acceso a la cámara
+          </Text>
+
+          <Text style={[styles.message, { color: colors.textSecondary }]}>
             Necesitamos la cámara para leer el código QR que muestra tu
             profesor.
           </Text>
-          <GeometricActionButton
-            label="PERMITIR CÁMARA"
-            icon="camera-outline"
-            onPress={requestPermission}
-          />
-          <TextButton label="VOLVER" onPress={() => router.back()} />
+
+          <View style={styles.permissionButton}>
+            <AppButton
+              label="PERMITIR CÁMARA"
+              icon="camera-outline"
+              onPress={requestPermission}
+              variant="primary"
+              size="large"
+              fullWidth
+            />
+          </View>
+
+          <BackButton onPress={() => router.back()} />
         </View>
       </View>
     );
   }
+
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Stack.Screen options={{ headerShown: false }} />
+
       <Header />
+
       {!value ? (
         <ScrollView
           contentContainerStyle={styles.scanContent}
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.intro}>
-            <Text style={styles.title}>Enfocá el código QR</Text>
-            <Text style={styles.message}>
+            <Text style={[styles.title, { color: colors.text }]}>
+              Enfocá el código QR
+            </Text>
+
+            <Text style={[styles.message, { color: colors.textSecondary }]}>
               Ubicá el código dentro del marco para leerlo automáticamente.
             </Text>
           </View>
-          <View style={styles.cameraShell}>
+
+          <View style={[styles.cameraShell, { borderColor: colors.border }]}>
             <CameraView
               style={StyleSheet.absoluteFill}
               facing="back"
@@ -89,80 +117,212 @@ export default function QrScannerScreen() {
                 enabled ? ({ data }) => onScanned(data) : undefined
               }
             />
+
             <View pointerEvents="none" style={styles.cameraOverlay}>
               <View style={styles.scanFrame}>
-                <View style={styles.cornerTopLeft} />
-                <View style={styles.cornerTopRight} />
-                <View style={styles.cornerBottomLeft} />
-                <View style={styles.cornerBottomRight} />
-                <View style={styles.scanLine} />
+                <View
+                  style={[
+                    styles.cornerTopLeft,
+                    { borderColor: colors.secondary },
+                  ]}
+                />
+                <View
+                  style={[
+                    styles.cornerTopRight,
+                    { borderColor: colors.secondary },
+                  ]}
+                />
+                <View
+                  style={[
+                    styles.cornerBottomLeft,
+                    { borderColor: colors.secondary },
+                  ]}
+                />
+                <View
+                  style={[
+                    styles.cornerBottomRight,
+                    { borderColor: colors.secondary },
+                  ]}
+                />
+                <View
+                  style={[styles.scanLine, { backgroundColor: colors.accent }]}
+                />
               </View>
             </View>
-            <View style={styles.cameraTag}>
-              <View style={styles.liveDot} />
-              <Text style={styles.cameraTagText}>LECTURA AUTOMÁTICA</Text>
-            </View>
-          </View>
-          <View style={styles.scanHint}>
-            <View style={styles.hintIcon}>
-              <Ionicons name="qr-code-outline" size={27} color={COLORS.navy} />
-            </View>
-            <View style={styles.hintContent}>
-              <Text style={styles.hintTitle}>Cómo escanear</Text>
-              <Text style={styles.hintText}>
-                Escaneá el código QR que muestra el docente para registrar tu
-                asistencia.
+
+            <View
+              style={[styles.cameraTag, { backgroundColor: colors.primary }]}
+            >
+              <View
+                style={[styles.liveDot, { backgroundColor: colors.success }]}
+              />
+              <Text style={[styles.cameraTagText, { color: colors.white }]}>
+                LECTURA AUTOMÁTICA
               </Text>
             </View>
           </View>
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>ITS · ASISTENCIA ACADÉMICA</Text>
-          </View>
+
+          <AppCard style={styles.infoCard}>
+            <View style={styles.scanHint}>
+              <View
+                style={[
+                  styles.hintIcon,
+                  { backgroundColor: colors.background },
+                ]}
+              >
+                <Ionicons
+                  name="qr-code-outline"
+                  size={27}
+                  color={colors.secondary}
+                />
+              </View>
+
+              <View style={styles.hintContent}>
+                <Text style={[styles.hintTitle, { color: colors.text }]}>
+                  Cómo escanear
+                </Text>
+
+                <Text
+                  style={[styles.hintText, { color: colors.textSecondary }]}
+                >
+                  Escaneá el código QR que muestra el docente para registrar tu
+                  asistencia.
+                </Text>
+              </View>
+            </View>
+          </AppCard>
+
+          <Footer />
         </ScrollView>
       ) : (
         <ScrollView
           contentContainerStyle={styles.resultContent}
           showsVerticalScrollIndicator={false}
         >
-          <View style={styles.resultIcon}>
-            <Ionicons name="qr-code-outline" size={43} color={COLORS.blue} />
-            <View style={styles.resultAccent} />
+          <View
+            style={[
+              styles.resultIcon,
+              {
+                backgroundColor: colors.surface,
+                borderColor: colors.border,
+              },
+            ]}
+          >
+            {status === "validating" ? (
+              <ActivityIndicator size="large" color={colors.secondary} />
+            ) : (
+              <Ionicons
+                name={
+                  status === "success"
+                    ? "checkmark-circle-outline"
+                    : "alert-circle-outline"
+                }
+                size={43}
+                color={status === "success" ? colors.success : colors.warning}
+              />
+            )}
           </View>
-          <Text style={styles.title}>Código QR leído</Text>
-          <Text style={styles.message}>
-            Se detectó correctamente el siguiente código.
+
+          <Text style={[styles.title, { color: colors.text }]}>
+            {status === "validating"
+              ? "Validando asistencia"
+              : status === "success"
+                ? "Asistencia registrada"
+                : "No se pudo registrar"}
           </Text>
-          <View style={styles.valueCard}>
-            <View style={styles.valueAccent} />
-            <Text selectable style={styles.valueText}>
-              {value}
-            </Text>
-          </View>
-          <View style={styles.notice}>
-            <Ionicons
-              name="information-circle-outline"
-              size={26}
-              color={COLORS.orange}
-            />
-            <View style={styles.noticeContent}>
-              <Text style={styles.noticeTitle}>Validación pendiente</Text>
-              <Text style={styles.noticeText}>
-                El código todavía no fue validado por el servidor y la
-                asistencia no está registrada.
-              </Text>
-            </View>
-          </View>
+
+          <Text style={[styles.message, { color: colors.textSecondary }]}>
+            {status === "validating"
+              ? "Estamos verificando el código QR con el servidor."
+              : status === "success"
+                ? "El servidor confirmó el registro de tu asistencia."
+                : "No fue posible completar el registro de asistencia."}
+          </Text>
+
+          {status === "validating" && (
+            <AppCard style={styles.noticeCard}>
+              <View style={styles.notice}>
+                <ActivityIndicator size="small" color={colors.secondary} />
+
+                <View style={styles.noticeContent}>
+                  <Text style={[styles.noticeTitle, { color: colors.text }]}>
+                    Procesando solicitud
+                  </Text>
+
+                  <Text
+                    style={[styles.noticeText, { color: colors.textSecondary }]}
+                  >
+                    Esperá mientras verificamos tu registro.
+                  </Text>
+                </View>
+              </View>
+            </AppCard>
+          )}
+
+          {status === "success" && (
+            <AppCard style={styles.noticeCard}>
+              <View style={styles.notice}>
+                <Ionicons
+                  name="checkmark-circle-outline"
+                  size={26}
+                  color={colors.success}
+                />
+
+                <View style={styles.noticeContent}>
+                  <Text style={[styles.noticeTitle, { color: colors.text }]}>
+                    Registro confirmado
+                  </Text>
+
+                  <Text
+                    style={[styles.noticeText, { color: colors.textSecondary }]}
+                  >
+                    Tu asistencia fue procesada correctamente por el backend.
+                  </Text>
+                </View>
+              </View>
+            </AppCard>
+          )}
+
+          {status === "error" && (
+            <AppCard style={styles.noticeCard}>
+              <View style={styles.notice}>
+                <Ionicons
+                  name="alert-circle-outline"
+                  size={26}
+                  color={colors.warning}
+                />
+
+                <View style={styles.noticeContent}>
+                  <Text style={[styles.noticeTitle, { color: colors.text }]}>
+                    Error de validación
+                  </Text>
+
+                  <Text
+                    style={[styles.noticeText, { color: colors.textSecondary }]}
+                  >
+                    {error ?? "No se pudo validar el código QR."}
+                  </Text>
+                </View>
+              </View>
+            </AppCard>
+          )}
+
           <View style={styles.actions}>
-            <GeometricActionButton
-              label="ESCANEAR NUEVAMENTE"
-              icon="scan-outline"
-              onPress={reset}
-            />
-            <TextButton label="VOLVER" onPress={() => router.back()} />
+            {status !== "validating" && (
+              <AppButton
+                label="ESCANEAR NUEVAMENTE"
+                icon="scan-outline"
+                onPress={reset}
+                variant="primary"
+                size="large"
+                fullWidth
+              />
+            )}
+
+            <BackButton onPress={() => router.back()} />
           </View>
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>ITS · ASISTENCIA ACADÉMICA</Text>
-          </View>
+
+          <Footer />
         </ScrollView>
       )}
     </View>
@@ -170,69 +330,77 @@ export default function QrScannerScreen() {
 }
 
 function Header() {
+  const { colors } = useAppTheme();
+
   return (
-    <View style={styles.header}>
+    <View
+      style={[
+        styles.header,
+        {
+          backgroundColor: colors.primary,
+          borderBottomColor: colors.accent,
+        },
+      ]}
+    >
       <Pressable
         onPress={() => router.back()}
         style={styles.backButton}
         accessibilityRole="button"
         accessibilityLabel="Volver"
       >
-        <Ionicons name="arrow-back" size={25} color={COLORS.white} />
+        <Ionicons name="arrow-back" size={25} color={colors.white} />
       </Pressable>
+
       <View style={styles.headerText}>
-        <Text style={styles.headerTitle}>Escanear QR</Text>
-        <Text style={styles.headerSubtitle}>ITS · Asistencia académica</Text>
+        <Text style={[styles.headerTitle, { color: colors.white }]}>
+          Escanear QR
+        </Text>
+
+        <Text style={[styles.headerSubtitle, { color: colors.white }]}>
+          ITS · Asistencia académica
+        </Text>
       </View>
-      <View style={styles.brandMark}>
-        <Ionicons name="qr-code-outline" size={28} color={COLORS.white} />
-        <View style={styles.brandAccent} />
+
+      <View style={[styles.brandMark, { borderLeftColor: colors.accent }]}>
+        <Ionicons name="qr-code-outline" size={28} color={colors.white} />
       </View>
     </View>
   );
 }
 
-function TextButton({
-  label,
-  onPress,
-}: {
-  label: string;
-  onPress: () => void;
-}) {
+function BackButton({ onPress }: { onPress: () => void }) {
+  const { colors } = useAppTheme();
+
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
+      accessibilityLabel="Volver"
       style={({ pressed }) => [
-        styles.textButton,
-        pressed && styles.textButtonPressed,
+        styles.backActionButton,
+        pressed && styles.backActionButtonPressed,
       ]}
     >
-      <Svg
-        pointerEvents="none"
-        style={StyleSheet.absoluteFill}
-        viewBox="0 0 100 100"
-        preserveAspectRatio="none"
-      >
-        <Polygon
-          points="7,1 93,1 99,15 99,85 93,99 7,99 1,85 1,15"
-          fill="#FFFFFF"
-          stroke="#5DB5FF"
-          strokeWidth="1.2"
-        />
-        <Polygon points="7,1 16,1 1,17 1,15" fill={COLORS.navy} />
-        <Polygon points="82,99 99,82 99,87 87,99" fill="#D6E9FF" />
-      </Svg>
-      <Ionicons name="arrow-back" size={21} color={COLORS.navy} />
-      <Text style={styles.textButtonLabel}>{label}</Text>
+      <Ionicons name="arrow-back" size={25} color={colors.text} />
     </Pressable>
+  );
+}
+
+function Footer() {
+  const { colors } = useAppTheme();
+
+  return (
+    <View style={[styles.footer, { borderTopColor: colors.border }]}>
+      <Text style={[styles.footerText, { color: colors.textSecondary }]}>
+        ITS · ASISTENCIA ACADÉMICA
+      </Text>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
   },
 
   center: {
@@ -240,18 +408,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     padding: 28,
-    backgroundColor: COLORS.background,
   },
 
   header: {
     minHeight: 94,
     paddingHorizontal: 17,
     paddingVertical: 14,
-    backgroundColor: COLORS.navyDark,
     flexDirection: "row",
     alignItems: "center",
     borderBottomWidth: 3,
-    borderBottomColor: COLORS.orange,
   },
 
   backButton: {
@@ -267,15 +432,14 @@ const styles = StyleSheet.create({
   },
 
   headerTitle: {
-    color: COLORS.white,
     fontSize: 22,
     fontWeight: "800",
   },
 
   headerSubtitle: {
-    color: "#B8C5E0",
     fontSize: 12,
     fontWeight: "500",
+    opacity: 0.8,
   },
 
   brandMark: {
@@ -284,18 +448,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderLeftWidth: 2,
-    borderLeftColor: COLORS.orange,
     marginLeft: 8,
-  },
-
-  brandAccent: {
-    position: "absolute",
-    right: 0,
-    top: 2,
-    width: 4,
-    height: 12,
-    backgroundColor: COLORS.orange,
-    transform: [{ skewY: "-25deg" }],
   },
 
   scanContent: {
@@ -311,7 +464,6 @@ const styles = StyleSheet.create({
   },
 
   title: {
-    color: COLORS.navy,
     fontSize: 25,
     lineHeight: 32,
     fontWeight: "800",
@@ -320,7 +472,6 @@ const styles = StyleSheet.create({
 
   message: {
     marginTop: 9,
-    color: COLORS.secondary,
     fontSize: 15,
     lineHeight: 22,
     textAlign: "center",
@@ -330,9 +481,8 @@ const styles = StyleSheet.create({
     height: 410,
     position: "relative",
     overflow: "hidden",
-    backgroundColor: COLORS.navyDark,
+    backgroundColor: "#07152E",
     borderWidth: 1,
-    borderColor: COLORS.navyDark,
   },
 
   cameraOverlay: {
@@ -357,7 +507,6 @@ const styles = StyleSheet.create({
     height: 43,
     borderTopWidth: 5,
     borderLeftWidth: 5,
-    borderColor: "#1677FF",
   },
 
   cornerTopRight: {
@@ -368,7 +517,6 @@ const styles = StyleSheet.create({
     height: 43,
     borderTopWidth: 5,
     borderRightWidth: 5,
-    borderColor: "#1677FF",
   },
 
   cornerBottomLeft: {
@@ -379,7 +527,6 @@ const styles = StyleSheet.create({
     height: 43,
     borderBottomWidth: 5,
     borderLeftWidth: 5,
-    borderColor: "#1677FF",
   },
 
   cornerBottomRight: {
@@ -390,17 +537,11 @@ const styles = StyleSheet.create({
     height: 43,
     borderBottomWidth: 5,
     borderRightWidth: 5,
-    borderColor: "#1677FF",
   },
 
   scanLine: {
     width: "100%",
     height: 2,
-    backgroundColor: COLORS.orange,
-    shadowColor: COLORS.orange,
-    shadowOpacity: 0.9,
-    shadowRadius: 8,
-    elevation: 6,
   },
 
   cameraTag: {
@@ -410,43 +551,36 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    backgroundColor: "rgba(7,21,46,0.86)",
     paddingHorizontal: 11,
     paddingVertical: 9,
     borderLeftWidth: 3,
-    borderLeftColor: COLORS.orange,
+    borderLeftColor: "#FF8A00",
   },
 
   liveDot: {
     width: 7,
     height: 7,
-    backgroundColor: "#4ADE80",
   },
 
   cameraTagText: {
-    color: COLORS.white,
     fontSize: 10,
     fontWeight: "800",
     letterSpacing: 0.8,
+  },
+
+  infoCard: {
+    marginTop: 22,
   },
 
   scanHint: {
     flexDirection: "row",
     alignItems: "center",
     gap: 14,
-    marginTop: 22,
-    padding: 16,
-    backgroundColor: COLORS.white,
-    borderLeftWidth: 3,
-    borderLeftColor: COLORS.orange,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
   },
 
   hintIcon: {
     width: 46,
     height: 46,
-    backgroundColor: COLORS.blueLight,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -459,11 +593,9 @@ const styles = StyleSheet.create({
   hintTitle: {
     fontSize: 15,
     fontWeight: "800",
-    color: COLORS.navy,
   },
 
   hintText: {
-    color: COLORS.secondary,
     fontSize: 13,
     lineHeight: 19,
   },
@@ -483,58 +615,31 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: COLORS.blueLight,
     borderBottomWidth: 3,
-    borderBottomColor: COLORS.orange,
-  },
-
-  resultAccent: {
-    position: "absolute",
-    right: -4,
-    top: -4,
-    width: 14,
-    height: 14,
-    backgroundColor: COLORS.orange,
+    borderBottomColor: "#FF8A00",
   },
 
   valueCard: {
     minHeight: 94,
     marginTop: 27,
-    padding: 18,
-    backgroundColor: COLORS.white,
-    borderWidth: 1,
-    borderColor: "#A9C9FA",
-    borderLeftWidth: 4,
-    borderLeftColor: COLORS.blue,
     justifyContent: "center",
     alignItems: "center",
   },
 
-  valueAccent: {
-    position: "absolute",
-    right: 0,
-    top: 0,
-    width: 24,
-    height: 4,
-    backgroundColor: COLORS.orange,
-  },
-
   valueText: {
-    color: COLORS.navy,
     fontSize: 16,
     fontWeight: "800",
     textAlign: "center",
+  },
+
+  noticeCard: {
+    marginTop: 22,
   },
 
   notice: {
     flexDirection: "row",
     alignItems: "flex-start",
     gap: 12,
-    marginTop: 22,
-    padding: 16,
-    backgroundColor: COLORS.notice,
-    borderLeftWidth: 3,
-    borderLeftColor: COLORS.orange,
   },
 
   noticeContent: {
@@ -543,13 +648,11 @@ const styles = StyleSheet.create({
   },
 
   noticeTitle: {
-    color: COLORS.noticeText,
     fontSize: 15,
     fontWeight: "800",
   },
 
   noticeText: {
-    color: COLORS.noticeText,
     fontSize: 13,
     lineHeight: 20,
   },
@@ -559,28 +662,6 @@ const styles = StyleSheet.create({
     marginTop: 28,
   },
 
-  textButton: {
-    minHeight: 66,
-    paddingHorizontal: 17,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 13,
-    backgroundColor: COLORS.white,
-    borderWidth: 0,
-    overflow: "hidden",
-  },
-
-  textButtonPressed: {
-    backgroundColor: COLORS.blueLight,
-  },
-
-  textButtonLabel: {
-    color: COLORS.navy,
-    fontSize: 14,
-    fontWeight: "800",
-    letterSpacing: 0.7,
-  },
-
   permissionContent: {
     flex: 1,
     alignItems: "stretch",
@@ -588,30 +669,42 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
 
+  permissionButton: {
+    marginTop: 24,
+    marginBottom: 14,
+  },
+
   iconPanel: {
     alignSelf: "center",
     width: 76,
     height: 76,
     marginBottom: 22,
-    backgroundColor: COLORS.blueLight,
     alignItems: "center",
     justifyContent: "center",
     borderBottomWidth: 3,
-    borderBottomColor: COLORS.orange,
   },
 
   footer: {
     marginTop: 25,
     paddingTop: 14,
     borderTopWidth: 1,
-    borderTopColor: COLORS.border,
     alignItems: "center",
   },
-  
+
   footerText: {
-    color: COLORS.secondary,
     fontSize: 10,
     fontWeight: "800",
     letterSpacing: 1.2,
+  },
+  backActionButton: {
+    width: 48,
+    height: 48,
+    alignSelf: "center",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  backActionButtonPressed: {
+    opacity: 0.6,
   },
 });

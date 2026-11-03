@@ -1,135 +1,189 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Stack, router, useLocalSearchParams } from "expo-router";
-import GeometricActionButton from "@/components/attendance/GeometricActionButton";
+import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
+import { useState } from "react";
 
-import {
-  ActivityIndicator,
-  FlatList,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import GeometricActionButton from "@/components/attendance/GeometricActionButton";
+import { AppCard } from "@/components/ui/AppCard";
+import { FeedbackState } from "@/components/ui/FeedbackState";
+
+import { useAppTheme } from "@/features/theme/theme.provider";
+import { useCourseSessions } from "@/features/attendance/useCourseSessions";
+import { useSessionAttendance } from "@/features/attendance/useSessionAttendance";
 
 import type {
   AttendanceRecord,
   AttendanceStatus,
 } from "@/features/attendance/attendance.types";
-import { useSessionAttendance } from "@/features/attendance/useSessionAttendance";
+
+const STUDENTS_PER_PAGE = 4;
 
 function getStatusLabel(status: AttendanceStatus) {
   switch (status) {
     case "PRESENT":
       return "Presente";
-
     case "ABSENT":
       return "Ausente";
-
     case "LATE":
       return "Tardanza";
-
     case "JUSTIFIED":
       return "Justificada";
-
     default:
       return status;
   }
 }
 
-function getStatusStyles(status: AttendanceStatus) {
+function getStatusPresentation(
+  status: AttendanceStatus,
+  colors: ReturnType<typeof useAppTheme>["colors"],
+) {
   switch (status) {
     case "PRESENT":
       return {
-        badge: styles.presentBadge,
-        text: styles.presentText,
         icon: "checkmark-circle-outline" as const,
+        color: colors.success,
       };
 
     case "ABSENT":
       return {
-        badge: styles.absentBadge,
-        text: styles.absentText,
         icon: "close-circle-outline" as const,
+        color: colors.error,
       };
 
     case "LATE":
       return {
-        badge: styles.lateBadge,
-        text: styles.lateText,
         icon: "time-outline" as const,
+        color: colors.warning,
       };
 
     case "JUSTIFIED":
       return {
-        badge: styles.justifiedBadge,
-        text: styles.justifiedText,
         icon: "document-text-outline" as const,
+        color: colors.secondary,
       };
 
     default:
       return {
-        badge: styles.absentBadge,
-        text: styles.absentText,
         icon: "help-circle-outline" as const,
+        color: colors.textSecondary,
       };
   }
 }
 
-function StudentAttendanceCard({ record }: { record: AttendanceRecord }) {
-  const statusStyles = getStatusStyles(record.status);
+function StudentAttendanceCard({
+  record,
+  cardColor,
+}: {
+  record: AttendanceRecord;
+  cardColor: string;
+}) {
+  const { colors } = useAppTheme();
+
+  const statusPresentation = getStatusPresentation(record.status, colors);
 
   const initials =
     `${record.student.firstName.charAt(0)}${record.student.lastName.charAt(0)}`.toUpperCase();
 
   return (
-    <View style={styles.studentCard}>
+    <AppCard
+      padding={16}
+      style={[
+        styles.studentCard,
+        {
+          backgroundColor: colors.surface,
+          borderColor: colors.border,
+          borderLeftColor: cardColor,
+        },
+      ]}
+    >
       <View style={styles.studentInfo}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{initials}</Text>
+        <View style={[styles.avatar, { backgroundColor: `${cardColor}25` }]}>
+          <Text style={[styles.avatarText, { color: cardColor }]}>
+            {initials}
+          </Text>
         </View>
 
         <View style={styles.studentData}>
-          <Text style={styles.studentName}>
+          <Text style={[styles.studentName, { color: colors.text }]}>
             {record.student.firstName} {record.student.lastName}
           </Text>
 
           {record.student.studentNumber ? (
-            <Text style={styles.studentNumber}>
+            <Text
+              style={[styles.studentNumber, { color: colors.textSecondary }]}
+            >
               Legajo: {record.student.studentNumber}
             </Text>
           ) : null}
         </View>
       </View>
 
-      <View style={[styles.statusBadge, statusStyles.badge]}>
+      <View
+        style={[styles.statusBadge, { backgroundColor: colors.background }]}
+      >
         <Ionicons
-          name={statusStyles.icon}
+          name={statusPresentation.icon}
           size={16}
-          color={statusStyles.text.color}
+          color={statusPresentation.color}
         />
 
-        <Text style={[styles.statusText, statusStyles.text]}>
+        <Text style={[styles.statusText, { color: statusPresentation.color }]}>
           {getStatusLabel(record.status)}
         </Text>
       </View>
 
       {record.observation ? (
-        <View style={styles.observationContainer}>
-          <Ionicons name="chatbubble-outline" size={16} color="#64748B" />
+        <View
+          style={[
+            styles.observationContainer,
+            { borderTopColor: colors.border },
+          ]}
+        >
+          <Ionicons
+            name="chatbubble-outline"
+            size={16}
+            color={colors.textSecondary}
+          />
 
-          <Text style={styles.observation}>{record.observation}</Text>
+          <Text style={[styles.observation, { color: colors.textSecondary }]}>
+            {record.observation}
+          </Text>
         </View>
       ) : null}
-    </View>
+    </AppCard>
   );
 }
 
 export default function SessionAttendanceScreen() {
-  const params = useLocalSearchParams<{ id: string }>();
+  const { colors } = useAppTheme();
+
+  const [currentPage, setCurrentPage] = useState(0);
+
+  const params = useLocalSearchParams<{
+    id?: string | string[];
+    courseOfferingId?: string | string[];
+  }>();
+
   const sessionId = Array.isArray(params.id) ? params.id[0] : params.id;
+
+  const courseOfferingId = Array.isArray(params.courseOfferingId)
+    ? params.courseOfferingId[0]
+    : params.courseOfferingId;
+
   const { attendance, isLoading, error, reload } =
     useSessionAttendance(sessionId);
 
+  const {
+    sessions,
+    isLoading: isLoadingSessions,
+    error: sessionsError,
+  } = useCourseSessions(courseOfferingId ?? "");
+
+  const session = sessions.find((item) => item.id === sessionId);
+
+  const isSessionOpen = session?.status === "OPEN";
+
+  // Los contadores se calculan sobre todos los registros.
   const presentCount = attendance.filter(
     (record) => record.status === "PRESENT",
   ).length;
@@ -146,143 +200,304 @@ export default function SessionAttendanceScreen() {
     (record) => record.status === "JUSTIFIED",
   ).length;
 
+  // Paginación de alumnos.
+  const totalPages = Math.ceil(attendance.length / STUDENTS_PER_PAGE);
+
+  const safePage = Math.min(currentPage, Math.max(totalPages - 1, 0));
+
+  const startIndex = safePage * STUDENTS_PER_PAGE;
+
+  const paginatedAttendance = attendance.slice(
+    startIndex,
+    startIndex + STUDENTS_PER_PAGE,
+  );
+
+  const cardColors = [colors.secondary, colors.accent, colors.success];
+
   return (
     <>
-      <Stack.Screen
-        options={{
-          headerShown: false,
-        }}
-      />
+      <Stack.Screen options={{ headerShown: false }} />
 
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <Pressable style={styles.backButton} onPress={() => router.back()}>
-            <Ionicons name="arrow-back" size={24} color="#0F172A" />
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <View
+          style={[
+            styles.header,
+            {
+              backgroundColor: colors.surface,
+              borderBottomColor: colors.border,
+            },
+          ]}
+        >
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Volver"
+            onPress={() => router.back()}
+            style={({ pressed }) => [
+              styles.backButton,
+              pressed && styles.pressed,
+            ]}
+          >
+            <Ionicons name="arrow-back" size={29} color={colors.text} />
           </Pressable>
 
           <View style={styles.headerContent}>
-            <Text style={styles.title}>Detalle de asistencia</Text>
+            <Text style={[styles.title, { color: colors.text }]}>
+              Detalle de asistencia
+            </Text>
 
-            <Text style={styles.subtitle}>Asistencia registrada</Text>
+            <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+              Asistencia registrada
+            </Text>
           </View>
         </View>
 
-        <GeometricActionButton
-          label="GENERAR QR DE ASISTENCIA"
-          icon="qr-code-outline"
-          onPress={() =>
-            router.push({
-              pathname: "/teacher/session-qr",
-              params: { id: sessionId },
-            })
-          }
-        />
+        {!isLoadingSessions && !sessionsError && isSessionOpen && (
+          <View style={styles.qrButton}>
+            <GeometricActionButton
+              label="GENERAR QR DE ASISTENCIA"
+              icon="qr-code-outline"
+              onPress={() =>
+                router.push({
+                  pathname: "/teacher/session-qr",
+                  params: {
+                    id: sessionId,
+                    courseOfferingId,
+                  },
+                })
+              }
+            />
+          </View>
+        )}
 
         {isLoading ? (
-          <View style={styles.centerContent}>
-            <ActivityIndicator size="large" color="#0E6FB8" />
-
-            <Text style={styles.loadingText}>Cargando asistencia...</Text>
-          </View>
+          <FeedbackState type="loading" message="Cargando asistencia..." />
         ) : error ? (
-          <View style={styles.centerContent}>
-            <Ionicons name="alert-circle-outline" size={42} color="#DC2626" />
-
-            <Text style={styles.errorTitle}>
-              No se pudo cargar la asistencia
-            </Text>
-
-            <Text style={styles.errorText}>{error}</Text>
-
-            <Pressable style={styles.retryButton} onPress={reload}>
-              <Text style={styles.retryButtonText}>Reintentar</Text>
-            </Pressable>
-          </View>
+          <FeedbackState
+            type="error"
+            message={`No se pudo cargar la asistencia: ${error}`}
+            onRetry={reload}
+          />
         ) : attendance.length === 0 ? (
           <View style={styles.centerContent}>
-            <Ionicons name="people-outline" size={48} color="#64748B" />
+            <Ionicons
+              name="people-outline"
+              size={48}
+              color={colors.textSecondary}
+            />
 
-            <Text style={styles.emptyTitle}>No hay asistencia registrada</Text>
+            <Text style={[styles.emptyTitle, { color: colors.text }]}>
+              No hay asistencia registrada
+            </Text>
 
-            <Text style={styles.emptyText}>
+            <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
               No se encontraron registros de asistencia para esta sesión.
             </Text>
           </View>
         ) : (
           <FlatList
-            data={attendance}
+            data={paginatedAttendance}
             keyExtractor={(item) => item.id}
-            renderItem={({ item }) => <StudentAttendanceCard record={item} />}
+            renderItem={({ item, index }) => (
+              <StudentAttendanceCard
+                record={item}
+                cardColor={cardColors[(startIndex + index) % cardColors.length]}
+              />
+            )}
             contentContainerStyle={styles.listContent}
             showsVerticalScrollIndicator={false}
             refreshing={isLoading}
             onRefresh={reload}
             ListHeaderComponent={
               <View>
-                <View style={styles.summaryCard}>
+                <AppCard
+                  padding={16}
+                  style={[
+                    styles.summaryCard,
+                    {
+                      backgroundColor: colors.surface,
+                      borderColor: colors.border,
+                    },
+                  ]}
+                >
                   <View style={styles.summaryHeader}>
                     <Ionicons
                       name="stats-chart-outline"
                       size={22}
-                      color="#0E6FB8"
+                      color={colors.secondary}
                     />
 
-                    <Text style={styles.summaryTitle}>Resumen</Text>
+                    <Text style={[styles.summaryTitle, { color: colors.text }]}>
+                      Resumen
+                    </Text>
                   </View>
 
                   <View style={styles.summaryGrid}>
                     <View style={styles.summaryItem}>
-                      <Text style={styles.summaryNumber}>
+                      <Text
+                        style={[styles.summaryNumber, { color: colors.text }]}
+                      >
                         {attendance.length}
                       </Text>
 
-                      <Text style={styles.summaryLabel}>Alumnos</Text>
+                      <Text
+                        style={[
+                          styles.summaryLabel,
+                          { color: colors.textSecondary },
+                        ]}
+                      >
+                        Alumnos
+                      </Text>
                     </View>
 
                     <View style={styles.summaryItem}>
                       <Text
-                        style={[styles.summaryNumber, styles.presentNumber]}
+                        style={[
+                          styles.summaryNumber,
+                          { color: colors.success },
+                        ]}
                       >
                         {presentCount}
                       </Text>
 
-                      <Text style={styles.summaryLabel}>Presentes</Text>
-                    </View>
-
-                    <View style={styles.summaryItem}>
-                      <Text style={[styles.summaryNumber, styles.absentNumber]}>
-                        {absentCount}
+                      <Text
+                        style={[
+                          styles.summaryLabel,
+                          { color: colors.textSecondary },
+                        ]}
+                      >
+                        Presentes
                       </Text>
-
-                      <Text style={styles.summaryLabel}>Ausentes</Text>
-                    </View>
-
-                    <View style={styles.summaryItem}>
-                      <Text style={[styles.summaryNumber, styles.lateNumber]}>
-                        {lateCount}
-                      </Text>
-
-                      <Text style={styles.summaryLabel}>Tardanzas</Text>
                     </View>
 
                     <View style={styles.summaryItem}>
                       <Text
-                        style={[styles.summaryNumber, styles.justifiedNumber]}
+                        style={[styles.summaryNumber, { color: colors.error }]}
+                      >
+                        {absentCount}
+                      </Text>
+
+                      <Text
+                        style={[
+                          styles.summaryLabel,
+                          { color: colors.textSecondary },
+                        ]}
+                      >
+                        Ausentes
+                      </Text>
+                    </View>
+
+                    <View style={styles.summaryItem}>
+                      <Text
+                        style={[
+                          styles.summaryNumber,
+                          { color: colors.warning },
+                        ]}
+                      >
+                        {lateCount}
+                      </Text>
+
+                      <Text
+                        style={[
+                          styles.summaryLabel,
+                          { color: colors.textSecondary },
+                        ]}
+                      >
+                        Tardanzas
+                      </Text>
+                    </View>
+
+                    <View style={styles.summaryItem}>
+                      <Text
+                        style={[
+                          styles.summaryNumber,
+                          { color: colors.secondary },
+                        ]}
                       >
                         {justifiedCount}
                       </Text>
 
-                      <Text style={styles.summaryLabel}>Justificadas</Text>
+                      <Text
+                        style={[
+                          styles.summaryLabel,
+                          { color: colors.textSecondary },
+                        ]}
+                      >
+                        Justificadas
+                      </Text>
                     </View>
                   </View>
-                </View>
+                </AppCard>
 
                 <View style={styles.sectionHeader}>
-                  <Text style={styles.sectionTitle}>Alumnos</Text>
+                  <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                    Estudiantes
+                  </Text>
 
-                  <Text style={styles.sectionCount}>{attendance.length}</Text>
+                  <Text
+                    style={[
+                      styles.sectionCount,
+                      { color: colors.textSecondary },
+                    ]}
+                  >
+                    {attendance.length}
+                  </Text>
                 </View>
               </View>
+            }
+            ListFooterComponent={
+              totalPages > 1
+                ? () => (
+                    <View
+                      style={[
+                        styles.pagination,
+                        {
+                          borderColor: colors.border,
+                          backgroundColor: colors.surface,
+                        },
+                      ]}
+                    >
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel="Página anterior"
+                        disabled={safePage === 0}
+                        onPress={() => setCurrentPage(safePage - 1)}
+                        style={styles.paginationButton}
+                      >
+                        <Ionicons
+                          name="chevron-back"
+                          size={25}
+                          color={
+                            safePage === 0 ? colors.inactive : colors.secondary
+                          }
+                        />
+                      </Pressable>
+
+                      <Text
+                        style={[styles.paginationText, { color: colors.text }]}
+                      >
+                        Página {safePage + 1} de {totalPages}
+                      </Text>
+
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel="Página siguiente"
+                        disabled={safePage >= totalPages - 1}
+                        onPress={() => setCurrentPage(safePage + 1)}
+                        style={styles.paginationButton}
+                      >
+                        <Ionicons
+                          name="chevron-forward"
+                          size={25}
+                          color={
+                            safePage >= totalPages - 1
+                              ? colors.inactive
+                              : colors.secondary
+                          }
+                        />
+                      </Pressable>
+                    </View>
+                  )
+                : undefined
             }
           />
         )}
@@ -294,28 +509,23 @@ export default function SessionAttendanceScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8FAFC",
   },
 
   header: {
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 20,
-    paddingTop: 24,
+    paddingTop: 48,
     paddingBottom: 20,
-    backgroundColor: "#FFFFFF",
     borderBottomWidth: 1,
-    borderBottomColor: "#CBD5E1",
+    gap: 12,
   },
 
   backButton: {
-    width: 42,
-    height: 42,
-    borderRadius: 12,
+    width: 40,
+    height: 46,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#F1F5F9",
-    marginRight: 12,
   },
 
   headerContent: {
@@ -324,14 +534,17 @@ const styles = StyleSheet.create({
 
   title: {
     fontSize: 24,
-    fontWeight: "700",
-    color: "#0F172A",
+    fontWeight: "800",
   },
 
   subtitle: {
     marginTop: 4,
     fontSize: 14,
-    color: "#64748B",
+  },
+
+  qrButton: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
   },
 
   listContent: {
@@ -340,25 +553,21 @@ const styles = StyleSheet.create({
   },
 
   summaryCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    padding: 16,
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: "#CBD5E1",
+    borderRadius: 0,
   },
 
   summaryHeader: {
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 16,
+    gap: 8,
   },
 
   summaryTitle: {
-    marginLeft: 8,
     fontSize: 17,
     fontWeight: "700",
-    color: "#0F172A",
   },
 
   summaryGrid: {
@@ -375,30 +584,12 @@ const styles = StyleSheet.create({
   summaryNumber: {
     fontSize: 22,
     fontWeight: "800",
-    color: "#0F172A",
   },
 
   summaryLabel: {
     marginTop: 4,
     fontSize: 10,
-    color: "#64748B",
     textAlign: "center",
-  },
-
-  presentNumber: {
-    color: "#16A34A",
-  },
-
-  absentNumber: {
-    color: "#DC2626",
-  },
-
-  lateNumber: {
-    color: "#D97706",
-  },
-
-  justifiedNumber: {
-    color: "#7C3AED",
   },
 
   sectionHeader: {
@@ -411,22 +602,18 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#0F172A",
   },
 
   sectionCount: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#64748B",
   },
 
   studentCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    padding: 16,
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: "#CBD5E1",
+    borderLeftWidth: 6,
+    borderRadius: 0,
   },
 
   studentInfo: {
@@ -435,18 +622,16 @@ const styles = StyleSheet.create({
   },
 
   avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: "#E0F2FE",
+    width: 52,
+    height: 52,
     alignItems: "center",
     justifyContent: "center",
+    borderRadius: 0,
   },
 
   avatarText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: "800",
-    color: "#0E6FB8",
   },
 
   studentData: {
@@ -457,13 +642,11 @@ const styles = StyleSheet.create({
   studentName: {
     fontSize: 15,
     fontWeight: "700",
-    color: "#0F172A",
   },
 
   studentNumber: {
     marginTop: 3,
     fontSize: 12,
-    color: "#64748B",
   },
 
   statusBadge: {
@@ -473,7 +656,7 @@ const styles = StyleSheet.create({
     marginTop: 12,
     paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 999,
+    borderRadius: 0,
   },
 
   statusText: {
@@ -482,53 +665,46 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
 
-  presentBadge: {
-    backgroundColor: "#DCFCE7",
-  },
-
-  presentText: {
-    color: "#166534",
-  },
-
-  absentBadge: {
-    backgroundColor: "#FEE2E2",
-  },
-
-  absentText: {
-    color: "#991B1B",
-  },
-
-  lateBadge: {
-    backgroundColor: "#FEF3C7",
-  },
-
-  lateText: {
-    color: "#92400E",
-  },
-
-  justifiedBadge: {
-    backgroundColor: "#EDE9FE",
-  },
-
-  justifiedText: {
-    color: "#6D28D9",
-  },
-
   observationContainer: {
     flexDirection: "row",
     alignItems: "flex-start",
     marginTop: 12,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: "#E2E8F0",
   },
 
   observation: {
     flex: 1,
     marginLeft: 8,
     fontSize: 13,
-    color: "#475569",
     lineHeight: 19,
+  },
+
+  pagination: {
+    minHeight: 64,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 18,
+    borderWidth: 1,
+    borderRadius: 0,
+    paddingHorizontal: 12,
+  },
+
+  paginationButton: {
+    width: 42,
+    height: 46,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  paginationText: {
+    fontSize: 14,
+    fontWeight: "700",
+  },
+
+  pressed: {
+    opacity: 0.65,
   },
 
   centerContent: {
@@ -538,53 +714,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
   },
 
-  loadingText: {
-    marginTop: 12,
-    fontSize: 14,
-    color: "#64748B",
-  },
-
-  errorTitle: {
-    marginTop: 12,
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#0F172A",
-    textAlign: "center",
-  },
-
-  errorText: {
-    marginTop: 6,
-    fontSize: 14,
-    color: "#64748B",
-    textAlign: "center",
-  },
-
-  retryButton: {
-    marginTop: 20,
-    backgroundColor: "#0E6FB8",
-    paddingHorizontal: 20,
-    paddingVertical: 11,
-    borderRadius: 10,
-  },
-
-  retryButtonText: {
-    color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: "700",
-  },
-
   emptyTitle: {
     marginTop: 14,
     fontSize: 18,
     fontWeight: "700",
-    color: "#0F172A",
     textAlign: "center",
   },
 
   emptyText: {
     marginTop: 6,
     fontSize: 14,
-    color: "#64748B",
     textAlign: "center",
     lineHeight: 20,
   },

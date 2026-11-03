@@ -1,39 +1,62 @@
-import {
-  DarkTheme,
-  DefaultTheme,
-  Stack,
-  ThemeProvider,
-} from "expo-router";
+import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import "react-native-reanimated";
 
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { AuthProvider } from "@/features/auth/session.provider";
+import { AppThemeProvider, useAppTheme } from "@/features/theme/theme.provider";
 
-export default function RootLayout() {
-  const colorScheme = useColorScheme();
+function AppNavigation() {
+  const { mode, colors } = useAppTheme();
+
+  const navigationTheme = {
+    ...(mode === "dark" ? DarkTheme : DefaultTheme),
+    colors: {
+      ...(mode === "dark" ? DarkTheme.colors : DefaultTheme.colors),
+      primary: colors.secondary,
+      background: colors.background,
+      card: colors.surface,
+      text: colors.text,
+      border: colors.border,
+      notification: colors.accent,
+    },
+  };
 
   return (
-    <AuthProvider>
-      <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-        <Stack initialRouteName="login">
-          <Stack.Screen
-            name="login"
-            options={{
-              headerShown: false,
-            }}
-          />
+    <ThemeProvider value={navigationTheme}>
+      <Stack>
+        <Stack.Screen
+          name="login"
+          options={{
+            headerShown: false,
+          }}
+        />
 
-          <Stack.Screen
-            name="(tabs)"
-            options={{
-              headerShown: false,
-            }}
-          />
-        </Stack>
+        <Stack.Screen
+          name="(tabs)"
+          options={{
+            headerShown: false,
+          }}
+        />
 
-        <StatusBar style="auto" />
-      </ThemeProvider>
-    </AuthProvider>
+        <Stack.Screen
+          name="teacher"
+          options={{
+            headerShown: false,
+          }}
+        />
+      </Stack>
+
+      <StatusBar style={mode === "dark" ? "light" : "dark"} />
+    </ThemeProvider>
+  );
+}
+
+export default function RootLayout() {
+  return (
+    <AppThemeProvider>
+      <AuthProvider>
+        <AppNavigation />
+      </AuthProvider>
+    </AppThemeProvider>
   );
 }

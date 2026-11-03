@@ -1,110 +1,100 @@
+import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import {
-  ActivityIndicator,
-  FlatList,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { useMemo, useState } from "react";
+import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 
+import { AppButton } from "@/components/ui/AppButton";
+import { FeedbackState } from "@/components/ui/FeedbackState";
 import { CourseOfferingCard } from "@/components/courses/CourseOfferingCard";
-import { useTeacherCourses } from "@/features/courses/useTeacherCourses";
+import { useAppTheme } from "@/features/theme/theme.provider";
 import { useSession } from "@/features/auth/useSession";
+import { useTeacherCourses } from "@/features/courses/useTeacherCourses";
+import LogoutButton from "@/components/logout-button";
+
+const PAGE_SIZE = 3;
 
 export default function TeacherHomeScreen() {
-  const {
-    courses,
-    isLoading,
-    error,
-    reload,
-  } = useTeacherCourses();
+  const { colors } = useAppTheme();
+  const { user } = useSession();
+  const { courses, isLoading, error, reload } = useTeacherCourses();
 
-  const { logout } = useSession();
+  const [currentPage, setCurrentPage] = useState(0);
 
-  async function handleLogout() {
-    await logout();
-    router.replace("/login");
-  }
+  const firstName = user?.profile?.firstName?.trim() || "Docente";
+
+  const totalPages = Math.ceil(courses.length / PAGE_SIZE);
+
+  const paginatedCourses = useMemo(() => {
+    const startIndex = currentPage * PAGE_SIZE;
+    return courses.slice(startIndex, startIndex + PAGE_SIZE);
+  }, [courses, currentPage]);
 
   function handleProfile() {
     router.push("/teacher/profile");
   }
 
-  if (isLoading) {
-    return (
-      <View style={styles.centerContainer}>
-        <ActivityIndicator
-          size="large"
-          color="#4070B2"
-        />
+  function handlePreviousPage() {
+    setCurrentPage((page) => Math.max(page - 1, 0));
+  }
 
-        <Text style={styles.loadingText}>
-          Cargando tus cursadas...
-        </Text>
-      </View>
-    );
+  function handleNextPage() {
+    setCurrentPage((page) => Math.min(page + 1, totalPages - 1));
+  }
+
+  if (isLoading) {
+    return <FeedbackState type="loading" message="Cargando tus cursadas..." />;
   }
 
   if (error) {
     return (
-      <View style={styles.centerContainer}>
-        <Text style={styles.errorTitle}>
+      <View
+        style={[styles.centerContainer, { backgroundColor: colors.background }]}
+      >
+        <Text style={[styles.errorTitle, { color: colors.text }]}>
           No se pudieron cargar las cursadas
         </Text>
 
-        <Text style={styles.errorText}>
+        <Text style={[styles.message, { color: colors.textSecondary }]}>
           {error}
         </Text>
 
-        <Pressable
-          style={styles.retryButton}
-          onPress={reload}
-        >
-          <Text style={styles.retryButtonText}>
-            Reintentar
-          </Text>
-        </Pressable>
-
-        <Pressable
-          style={styles.logoutButton}
-          onPress={handleLogout}
-        >
-          <Text style={styles.logoutButtonText}>
-            Cerrar sesión
-          </Text>
-        </Pressable>
+        <View style={styles.centerActions}>
+          <AppButton
+            label="Reintentar"
+            onPress={reload}
+            variant="primary"
+            size="medium"
+          />
+          <LogoutButton />
+        </View>
       </View>
     );
   }
 
   if (courses.length === 0) {
     return (
-      <View style={styles.centerContainer}>
-        <Text style={styles.emptyTitle}>
+      <View
+        style={[styles.centerContainer, { backgroundColor: colors.background }]}
+      >
+        <Text style={[styles.errorTitle, { color: colors.text }]}>
           No tenés cursadas asignadas
         </Text>
 
-        <Text style={styles.emptyText}>
+        <Text style={[styles.message, { color: colors.textSecondary }]}>
           No se encontraron cursadas para este profesor.
         </Text>
 
-        <Pressable
-          style={styles.logoutButton}
-          onPress={handleLogout}
-        >
-          <Text style={styles.logoutButtonText}>
-            Cerrar sesión
-          </Text>
-        </Pressable>
+        <View style={styles.centerActions}>
+          <LogoutButton />
+        </View>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <FlatList
-        data={courses}
+        data={paginatedCourses}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
@@ -112,52 +102,86 @@ export default function TeacherHomeScreen() {
         onRefresh={reload}
         ListHeaderComponent={
           <View style={styles.header}>
-            <View style={styles.headerTop}>
-              <View style={styles.headerText}>
-                <Text style={styles.title}>
-                  Mis cursadas
-                </Text>
+            <View style={styles.headerText}>
+              <Text
+                style={[styles.greeting, { color: colors.text }]}
+                numberOfLines={2}
+              >
+                ¡Bienvenido, {firstName}!
+              </Text>
 
-                <Text style={styles.subtitle}>
-                  Seleccioná una cursada para continuar
-                </Text>
-              </View>
-
-              <View style={styles.headerActions}>
-                <Pressable
-                  style={styles.profileButton}
-                  onPress={handleProfile}
-                >
-                  <Text style={styles.profileButtonText}>
-                    Perfil
-                  </Text>
-                </Pressable>
-
-                <Pressable
-                  style={styles.logoutButton}
-                  onPress={handleLogout}
-                >
-                  <Text style={styles.logoutButtonText}>
-                    Salir
-                  </Text>
-                </Pressable>
-              </View>
+              <Text style={[styles.subtitle, { color: colors.accent }]}>
+                Docente
+              </Text>
             </View>
+
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Ir a mi perfil"
+              onPress={handleProfile}
+              style={({ pressed }) => [
+                styles.profileButton,
+                { backgroundColor: colors.secondary },
+                pressed && styles.pressed,
+              ]}
+            >
+              <Ionicons name="person-outline" size={30} color={colors.white} />
+            </Pressable>
           </View>
         }
-        renderItem={({ item }) => (
-          <CourseOfferingCard
-            course={item}
-            onPress={() =>
-              router.push({
-                pathname: "/teacher/course",
-                params: {
-                  id: item.id,
-                },
-              })
-            }
-          />
-        )}
+        renderItem={({ item, index }) => {
+          const globalIndex = currentPage * PAGE_SIZE + index;
+
+          const cardColors = [colors.secondary, colors.accent, colors.success];
+
+          return (
+            <CourseOfferingCard
+              course={item}
+              cardColor={cardColors[globalIndex % cardColors.length]}
+              onPress={() =>
+                router.push({
+                  pathname: "/teacher/course",
+                  params: { id: item.id },
+                })
+              }
+            />
+          );
+        }}
+        ItemSeparatorComponent={() => <View style={styles.cardSeparator} />}
+        ListFooterComponent={
+          <View style={styles.footer}>
+            {totalPages > 1 && (
+              <View style={styles.pagination}>
+                <AppButton
+                  label="Anterior"
+                  onPress={handlePreviousPage}
+                  variant="secondary"
+                  size="small"
+                  disabled={currentPage === 0}
+                />
+
+                <Text
+                  style={[
+                    styles.pageIndicator,
+                    { color: colors.textSecondary },
+                  ]}
+                >
+                  Página {currentPage + 1} de {totalPages}
+                </Text>
+
+                <AppButton
+                  label="Siguiente"
+                  onPress={handleNextPage}
+                  variant="danger"
+                  size="small"
+                  disabled={currentPage === totalPages - 1}
+                />
+              </View>
+            )}
+
+            <LogoutButton />
+          </View>
+        }
       />
     </View>
   );
@@ -166,127 +190,95 @@ export default function TeacherHomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F4F7FB",
   },
 
   listContent: {
+    flexGrow: 1,
     paddingHorizontal: 20,
-    paddingTop: 30,
-    paddingBottom: 35,
+    paddingTop: 55,
+    paddingBottom: 30,
   },
-
   header: {
-    marginBottom: 20,
-  },
-
-  headerTop: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    marginBottom: 46,
   },
 
   headerText: {
     flex: 1,
-    paddingRight: 12,
+    marginRight: 14,
   },
 
-  headerActions: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-
-  title: {
+  greeting: {
     fontSize: 28,
     fontWeight: "800",
-    color: "#1F2937",
+    letterSpacing: -0.5,
+    lineHeight: 36,
   },
 
   subtitle: {
-    marginTop: 6,
-    fontSize: 14,
-    color: "#6B7280",
+    fontSize: 16,
+    fontWeight: "700",
+    marginTop: 8,
+  },
+
+  profileButton: {
+    width: 58,
+    height: 58,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  cardSeparator: {
+    height: 12,
+  },
+
+  footer: {
+    marginTop: 24,
+    gap: 28,
+  },
+
+  pagination: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 8,
+  },
+
+  pageIndicator: {
+    fontSize: 13,
+    fontWeight: "600",
+  },
+
+  pressed: {
+    opacity: 0.75,
   },
 
   centerContainer: {
     flex: 1,
-    backgroundColor: "#F4F7FB",
-    alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 30,
-  },
-
-  loadingText: {
-    marginTop: 12,
-    fontSize: 15,
-    color: "#6B7280",
+    alignItems: "center",
+    padding: 24,
   },
 
   errorTitle: {
-    fontSize: 19,
+    fontSize: 20,
     fontWeight: "800",
-    color: "#1F2937",
     textAlign: "center",
+    marginBottom: 10,
   },
 
-  errorText: {
-    marginTop: 8,
+  message: {
     fontSize: 14,
-    color: "#6B7280",
     textAlign: "center",
+    lineHeight: 21,
+    marginBottom: 22,
   },
 
-  retryButton: {
-    marginTop: 20,
-    backgroundColor: "#4070B2",
-    borderRadius: 10,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-  },
-
-  retryButtonText: {
-    color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: "700",
-  },
-
-  emptyTitle: {
-    fontSize: 19,
-    fontWeight: "800",
-    color: "#1F2937",
-    textAlign: "center",
-  },
-
-  emptyText: {
-    marginTop: 8,
-    fontSize: 14,
-    color: "#6B7280",
-    textAlign: "center",
-  },
-
-  profileButton: {
-    backgroundColor: "#E8F0FA",
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 9,
-  },
-
-  profileButtonText: {
-    color: "#4070B2",
-    fontSize: 13,
-    fontWeight: "700",
-  },
-
-  logoutButton: {
-    backgroundColor: "#E5E7EB",
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 9,
-  },
-
-  logoutButtonText: {
-    color: "#374151",
-    fontSize: 13,
-    fontWeight: "700",
+  centerActions: {
+    gap: 12,
+    width: "100%",
+    maxWidth: 280,
   },
 });

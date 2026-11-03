@@ -1,45 +1,44 @@
-import {
-  useLocalSearchParams,
-} from "expo-router";
-
-import {
-  FlatList,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useLocalSearchParams } from "expo-router";
+import { useState } from "react";
+import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { StudentCard } from "@/components/students/StudentCard";
 import { FeedbackState } from "@/components/ui/FeedbackState";
 import { useCourseStudents } from "@/features/courses/useCourseStudents";
+import { useAppTheme } from "@/features/theme/theme.provider";
+
+const STUDENTS_PER_PAGE = 3;
 
 export default function CourseStudentsScreen() {
-  const { id } = useLocalSearchParams();
+  const { colors } = useAppTheme();
+  const params = useLocalSearchParams<{ id: string }>();
 
-  const {
-    students,
-    isLoading,
-    error,
-    reload,
-  } = useCourseStudents(id);
+  const courseOfferingId = Array.isArray(params.id) ? params.id[0] : params.id;
+
+  const { students, isLoading, error, reload } =
+    useCourseStudents(courseOfferingId);
+
+  const [currentPage, setCurrentPage] = useState(0);
+
+  const totalPages = Math.ceil(students.length / STUDENTS_PER_PAGE);
+  const safePage = Math.min(currentPage, Math.max(totalPages - 1, 0));
+
+  const startIndex = safePage * STUDENTS_PER_PAGE;
+
+  const paginatedStudents = students.slice(
+    startIndex,
+    startIndex + STUDENTS_PER_PAGE,
+  );
+
+  const cardColors = [colors.secondary, colors.accent, colors.success];
 
   if (isLoading) {
-    return (
-      <FeedbackState
-        type="loading"
-        message="Cargando estudiantes..."
-      />
-    );
+    return <FeedbackState type="loading" message="Cargando estudiantes..." />;
   }
 
   if (error) {
-    return (
-      <FeedbackState
-        type="error"
-        message={error}
-        onRetry={reload}
-      />
-    );
+    return <FeedbackState type="error" message={error} onRetry={reload} />;
   }
 
   if (students.length === 0) {
@@ -52,24 +51,76 @@ export default function CourseStudentsScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
-        <Text style={styles.title}>
-          Estudiantes
-        </Text>
-
-        <Text style={styles.subtitle}>
-          {students.length} estudiantes inscriptos
-        </Text>
+        <Text style={[styles.title, { color: colors.text }]}>Estudiantes</Text>
       </View>
 
       <FlatList
-        data={students}
+        data={paginatedStudents}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.list}
-        renderItem={({ item }) => (
-          <StudentCard student={item} />
+        renderItem={({ item, index }) => (
+          <StudentCard
+            student={item}
+            cardColor={cardColors[(startIndex + index) % cardColors.length]}
+          />
         )}
+        contentContainerStyle={styles.list}
+        showsVerticalScrollIndicator={false}
+        ItemSeparatorComponent={() => <View style={styles.separator} />}
+        ListFooterComponent={
+          totalPages > 1
+            ? () => (
+                <View
+                  style={[
+                    styles.pagination,
+                    {
+                      borderTopColor: colors.border,
+                      backgroundColor: colors.surface,
+                    },
+                  ]}
+                >
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="Página anterior"
+                    disabled={safePage === 0}
+                    onPress={() => setCurrentPage(safePage - 1)}
+                    style={styles.paginationButton}
+                  >
+                    <Ionicons
+                      name="chevron-back"
+                      size={22}
+                      color={
+                        safePage === 0 ? colors.inactive : colors.secondary
+                      }
+                    />
+                  </Pressable>
+
+                  <Text style={[styles.paginationText, { color: colors.text }]}>
+                    Página {safePage + 1} de {totalPages}
+                  </Text>
+
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="Página siguiente"
+                    disabled={safePage >= totalPages - 1}
+                    onPress={() => setCurrentPage(safePage + 1)}
+                    style={styles.paginationButton}
+                  >
+                    <Ionicons
+                      name="chevron-forward"
+                      size={22}
+                      color={
+                        safePage >= totalPages - 1
+                          ? colors.inactive
+                          : colors.secondary
+                      }
+                    />
+                  </Pressable>
+                </View>
+              )
+            : undefined
+        }
       />
     </View>
   );
@@ -78,30 +129,47 @@ export default function CourseStudentsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F5F7FA",
   },
 
   header: {
     paddingHorizontal: 20,
     paddingTop: 55,
-    paddingBottom: 18,
+    paddingBottom: 22,
   },
 
   title: {
     fontSize: 27,
     fontWeight: "800",
-    color: "#1F2937",
-  },
-
-  subtitle: {
-    marginTop: 5,
-    fontSize: 14,
-    color: "#6B7280",
   },
 
   list: {
     paddingHorizontal: 20,
     paddingBottom: 30,
-    gap: 10,
+  },
+
+  separator: {
+    height: 12,
+  },
+
+  pagination: {
+    marginTop: 24,
+    paddingTop: 14,
+    paddingBottom: 12,
+    borderTopWidth: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+
+  paginationButton: {
+    width: 44,
+    height: 42,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  paginationText: {
+    fontSize: 14,
+    fontWeight: "700",
   },
 });

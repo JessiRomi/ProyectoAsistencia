@@ -1,3 +1,4 @@
+
 import { useCallback, useEffect, useState } from "react";
 
 import { getCourseStudents } from "./courses.service";
@@ -10,27 +11,23 @@ export function useCourseStudents(
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
+  const courseId = Array.isArray(courseOfferingId)
+    ? courseOfferingId[0]
+    : courseOfferingId;
+
   const loadStudents = useCallback(async () => {
+    if (!courseId) {
+      setStudents([]);
+      setIsLoading(false);
+      setError("No se encontró la cursada.");
+      return;
+    }
+
+    setIsLoading(true);
+    setError("");
+
     try {
-      setIsLoading(true);
-      setError("");
-
-      const courseId = Array.isArray(courseOfferingId)
-        ? courseOfferingId[0]
-        : courseOfferingId;
-
-      if (!courseId) {
-        setStudents([]);
-        setError("No se encontró la cursada.");
-        return;
-      }
-
-      console.log("Cargando estudiantes de la cursada:", courseId);
-
       const data = await getCourseStudents(courseId);
-
-      console.log("Estudiantes recibidos:", data);
-
       setStudents(data);
     } catch (error) {
       console.error("Error cargando los estudiantes:", error);
@@ -38,11 +35,47 @@ export function useCourseStudents(
     } finally {
       setIsLoading(false);
     }
-  }, [courseOfferingId]);
+  }, [courseId]);
 
   useEffect(() => {
-    loadStudents();
-  }, [loadStudents]);
+    let active = true;
+
+    async function load() {
+      if (!courseId) {
+        setStudents([]);
+        setIsLoading(false);
+        setError("No se encontró la cursada.");
+        return;
+      }
+
+      setIsLoading(true);
+      setError("");
+
+      try {
+        const data = await getCourseStudents(courseId);
+
+        if (active) {
+          setStudents(data);
+        }
+      } catch (error) {
+        console.error("Error cargando los estudiantes:", error);
+
+        if (active) {
+          setError("No se pudieron cargar los estudiantes.");
+        }
+      } finally {
+        if (active) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    void load();
+
+    return () => {
+      active = false;
+    };
+  }, [courseId]);
 
   return {
     students,
@@ -50,4 +83,4 @@ export function useCourseStudents(
     error,
     reload: loadStudents,
   };
-} 
+}

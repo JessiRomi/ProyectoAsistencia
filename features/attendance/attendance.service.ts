@@ -78,15 +78,23 @@ export async function closeClassSession(
   });
 }
 
+
 /**
  * Obtiene el historial de asistencia del estudiante autenticado.
+ * Opcionalmente, filtra por una cursada específica.
  */
-export async function getMyAttendance(): Promise<StudentAttendanceResponse> {
+export async function getMyAttendance(
+  courseOfferingId?: string,
+): Promise<StudentAttendanceResponse> {
+  const query = courseOfferingId
+    ? `?courseOfferingId=${encodeURIComponent(courseOfferingId)}`
+    : "";
+
   const response = await apiClient<{
     success: boolean;
     data: StudentAttendanceResponse;
     timestamp: string;
-  }>("/students/me/attendance", {
+  }>(`/students/me/attendance${query}`, {
     method: "GET",
   });
 
