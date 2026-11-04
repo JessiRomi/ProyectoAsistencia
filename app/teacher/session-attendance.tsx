@@ -1,16 +1,21 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Stack, router, useLocalSearchParams } from "expo-router";
-import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
+import {
+  Alert,
+  FlatList,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { useState } from "react";
-
 import GeometricActionButton from "@/components/attendance/GeometricActionButton";
 import { AppCard } from "@/components/ui/AppCard";
 import { FeedbackState } from "@/components/ui/FeedbackState";
-
 import { useAppTheme } from "@/features/theme/theme.provider";
 import { useCourseSessions } from "@/features/attendance/useCourseSessions";
 import { useSessionAttendance } from "@/features/attendance/useSessionAttendance";
-
+import { closeClassSession } from "@/features/attendance/attendance.service";
 import type {
   AttendanceRecord,
   AttendanceStatus,
@@ -156,9 +161,8 @@ function StudentAttendanceCard({
 
 export default function SessionAttendanceScreen() {
   const { colors } = useAppTheme();
-
   const [currentPage, setCurrentPage] = useState(0);
-
+  const [isClosing, setIsClosing] = useState(false);
   const params = useLocalSearchParams<{
     id?: string | string[];
     courseOfferingId?: string | string[];
@@ -177,11 +181,52 @@ export default function SessionAttendanceScreen() {
     sessions,
     isLoading: isLoadingSessions,
     error: sessionsError,
+    reload: reloadSessions,
   } = useCourseSessions(courseOfferingId ?? "");
 
   const session = sessions.find((item) => item.id === sessionId);
 
   const isSessionOpen = session?.status === "OPEN";
+  const handleCloseSession = () => {
+    if (!sessionId || !isSessionOpen || isClosing) return;
+
+    Alert.alert(
+      "Finalizar clase",
+      "¿Estás seguro de que querés finalizar esta clase? Se cerrará también la ventana de registro de asistencia y los estudiantes ya no podrán registrar su asistencia.",
+      [
+        {
+          text: "Cancelar",
+          style: "cancel",
+        },
+        {
+          text: "Finalizar clase",
+          style: "destructive",
+          onPress: async () => {
+            setIsClosing(true);
+
+            try {
+              await closeClassSession(sessionId);
+              await reloadSessions();
+
+              Alert.alert(
+                "Clase finalizada",
+                "La clase se cerró correctamente.",
+              );
+            } catch (error) {
+              Alert.alert(
+                "Error",
+                error instanceof Error
+                  ? error.message
+                  : "No se pudo finalizar la clase.",
+              );
+            } finally {
+              setIsClosing(false);
+            }
+          },
+        },
+      ],
+    );
+  };
 
   // Los contadores se calculan sobre todos los registros.
   const presentCount = attendance.filter(
@@ -202,11 +247,8 @@ export default function SessionAttendanceScreen() {
 
   // Paginación de alumnos.
   const totalPages = Math.ceil(attendance.length / STUDENTS_PER_PAGE);
-
   const safePage = Math.min(currentPage, Math.max(totalPages - 1, 0));
-
   const startIndex = safePage * STUDENTS_PER_PAGE;
-
   const paginatedAttendance = attendance.slice(
     startIndex,
     startIndex + STUDENTS_PER_PAGE,
@@ -253,19 +295,31 @@ export default function SessionAttendanceScreen() {
 
         {!isLoadingSessions && !sessionsError && isSessionOpen && (
           <View style={styles.qrButton}>
-            <GeometricActionButton
-              label="GENERAR QR DE ASISTENCIA"
-              icon="qr-code-outline"
-              onPress={() =>
-                router.push({
-                  pathname: "/teacher/session-qr",
-                  params: {
-                    id: sessionId,
-                    courseOfferingId,
-                  },
-                })
-              }
-            />
+            <View style={{ gap: 12 }}>
+              <GeometricActionButton
+                label="GENERAR QR DE ASISTENCIA"
+                icon="qr-code-outline"
+                variant="primary"
+                onPress={() =>
+                  router.push({
+                    pathname: "/teacher/session-qr",
+                    params: {
+                      id: sessionId,
+                      courseOfferingId,
+                    },
+                  })
+                }
+              />
+
+              <GeometricActionButton
+                label={isClosing ? "FINALIZANDO CLASE..." : "FINALIZAR CLASE"}
+                icon="close-circle-outline"
+                variant="danger"
+                onPress={handleCloseSession}
+                disabled={isClosing}
+                loading={isClosing}
+              />
+            </View>
           </View>
         )}
 

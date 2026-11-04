@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 
 import {
   Alert,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -251,13 +252,14 @@ export default function SessionQrScreen() {
         contentContainerStyle={styles.content}
       >
         <View style={[styles.header, { backgroundColor: colors.primary }]}>
-          <AppButton
-            label="Volver"
-            icon="arrow-back"
+          <Pressable
             onPress={() => router.back()}
-            variant="secondary"
-            size="small"
-          />
+            style={styles.backButton}
+            accessibilityRole="button"
+            accessibilityLabel="Volver"
+          >
+            <Ionicons name="arrow-back" size={30} color="#FFFFFF" />
+          </Pressable>
 
           <View style={styles.headerText}>
             <Text style={styles.headerTitle}>Código QR</Text>
@@ -430,7 +432,7 @@ export default function SessionQrScreen() {
             </View>
           )}
 
-          {checkInMode && qrValue && !error && (
+          {Boolean(checkInMode && qrValue && !error) && (
             <AppCard padding={14} style={styles.timerPanel}>
               <View style={styles.timerHeader}>
                 <Ionicons
@@ -658,5 +660,12 @@ const styles = StyleSheet.create({
     fontSize: 10,
     textAlign: "center",
     marginTop: 12,
+  },
+
+  backButton: {
+    width: 42,
+    height: 42,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });
