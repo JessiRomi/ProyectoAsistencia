@@ -1,3 +1,4 @@
+// Roles disponibles en el sistema según el backend
 export type UserRole =
   | "ADMIN"
   | "ACADEMIC"
@@ -10,6 +11,7 @@ export interface UserProfile {
   lastName: string;
 }
 
+// Datos principales del usuario autenticado
 export interface User {
   id: string;
   email: string;
@@ -17,6 +19,7 @@ export interface User {
   profile?: UserProfile;
 }
 
+// Estructura de la respuesta recibida al iniciar sesión
 export interface LoginResponse {
   success: boolean;
   data: {

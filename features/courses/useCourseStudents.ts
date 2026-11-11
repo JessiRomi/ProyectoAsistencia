@@ -1,9 +1,8 @@
-
 import { useCallback, useEffect, useState } from "react";
-
 import { getCourseStudents } from "./courses.service";
 import type { EnrolledStudent } from "./courses.types";
 
+// Gestiona la carga de estudiantes inscriptos en una cursada
 export function useCourseStudents(
   courseOfferingId: string | string[] | undefined,
 ) {
@@ -11,10 +10,12 @@ export function useCourseStudents(
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
+  // Normaliza el identificador por si Expo Router lo recibe como un arreglo
   const courseId = Array.isArray(courseOfferingId)
     ? courseOfferingId[0]
     : courseOfferingId;
 
+  // Permite actualizar manualmente la lista de estudiantes
   const loadStudents = useCallback(async () => {
     if (!courseId) {
       setStudents([]);
@@ -37,6 +38,7 @@ export function useCourseStudents(
     }
   }, [courseId]);
 
+  // Carga los estudiantes al iniciar el hook o cuando cambia la cursada
   useEffect(() => {
     let active = true;
 

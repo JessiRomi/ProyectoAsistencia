@@ -13,11 +13,12 @@ import { useStudentEnrollments } from "@/features/courses/useStudentEnrollments"
 
 const PAGE_SIZE = 3;
 
+// Protege la pantalla para que solo puedan acceder los estudiantes
 export default function AttendanceHistoryScreen() {
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
-
+      {/* Restringe el acceso al historial de asistencia al rol STUDENT. */}
       <RouteGuard allowedRoles={["STUDENT"]}>
         <AttendanceHistoryContent />
       </RouteGuard>
@@ -25,6 +26,7 @@ export default function AttendanceHistoryScreen() {
   );
 }
 
+// Obtiene las asistencias y las inscripciones del estudiante
 function AttendanceHistoryContent() {
   const { colors } = useAppTheme();
   const insets = useSafeAreaInsets();
@@ -47,10 +49,12 @@ function AttendanceHistoryContent() {
   const isLoading = attendanceLoading || enrollmentsLoading;
   const error = attendanceError || enrollmentsError;
 
+  // Filtra las cursadas activas del estudiante
   const activeEnrollments = enrollments.filter(
     (enrollment) => enrollment.status === "ACTIVE",
   );
 
+  // Agrupa los registros de asistencia por materia y calcula los totales de cada estado
   const subjects = activeEnrollments.map((enrollment) => {
     const offering = enrollment.courseOffering;
 
@@ -93,6 +97,7 @@ function AttendanceHistoryContent() {
 
   const subjectColors = [colors.secondary, colors.accent, colors.success];
 
+  // Actualiza simultáneamente las inscripciones y los registros de asistencia
   async function handleRetry() {
     await Promise.all([reloadAttendance(), reloadEnrollments()]);
   }
@@ -176,6 +181,7 @@ function AttendanceHistoryContent() {
               </AppCard>
             ) : (
               <>
+                {/* Muestra las materias activas y permite acceder al detalle de asistencia de cada una. */}
                 <View style={styles.subjectList}>
                   {visibleSubjects.map((subject, index) => {
                     const subjectIndex =
@@ -322,7 +328,7 @@ function AttendanceHistoryContent() {
                     );
                   })}
                 </View>
-
+                {/* Permite recorrer las materias cuando la cantidad supera el límite por página. */}
                 {totalPages > 1 && (
                   <View style={styles.pagination}>
                     <Pressable

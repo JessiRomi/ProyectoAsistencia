@@ -1,26 +1,28 @@
-
 import { useCallback, useRef, useState } from "react";
-
 import { getCurrentLocation } from "../location/location.service";
 import {
     getOpenCheckInWindows,
     registerStudentCheckIn,
 } from "./student-check-in.service";
 
+// Estados que representan las distintas etapas del registro de asistencia
 type CheckInStatus =
     | "idle"
     | "validating"
     | "success"
     | "error";
 
+// Gestiona el escaneo QR, la validación y el registro de asistencia del estudiante  
 export function useQrScanner() {
     const [value, setValue] = useState<string | null>(null);
     const [enabled, setEnabled] = useState(true);
     const [status, setStatus] = useState<CheckInStatus>("idle");
     const [error, setError] = useState<string | null>(null);
 
+    // Evita procesar varias lecturas QR simultáneamente
     const scanLock = useRef(false);
 
+    // Valida el QR, identifica la ventana de asistencia y registra al estudiante
     const onScanned = useCallback(async (data: string) => {
         if (scanLock.current || !data.trim()) {
             return;
@@ -67,7 +69,7 @@ export function useQrScanner() {
                     "La ventana de asistencia no está configurada para registro QR.",
                 );
             }
-
+            // Si la ventana requiere geolocalización, obtiene las coordenadas antes del registro
             if (matchingWindow.mode === "QR_GEO") {
                 const location = await getCurrentLocation();
 
@@ -97,6 +99,7 @@ export function useQrScanner() {
         }
     }, []);
 
+    // Restablece el escáner para permitir una nueva lectura  
     const reset = useCallback(() => {
         scanLock.current = false;
         setValue(null);

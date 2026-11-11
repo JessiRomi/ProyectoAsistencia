@@ -1,14 +1,14 @@
-
 import { useCallback, useEffect, useState } from "react";
-
 import { getSessionAttendance } from "./attendance.service";
 import type { AttendanceRecord } from "./attendance.types";
 
+// Gestiona la carga y consulta de los registros de asistencia de una sesión
 export function useSessionAttendance(sessionId?: string) {
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
+  // Permite actualizar manualmente los registros de asistencia
   const loadAttendance = useCallback(async () => {
     if (!sessionId) {
       setAttendance([]);
@@ -36,6 +36,7 @@ export function useSessionAttendance(sessionId?: string) {
     }
   }, [sessionId]);
 
+  // Carga la asistencia cuando cambia el identificador de sesión y evita actualizar el estado si el efecto ya se limpio
   useEffect(() => {
     let active = true;
 

@@ -1,5 +1,4 @@
 import { useState } from "react";
-
 import {
   closeClassSession,
   createClassSession,
@@ -13,6 +12,7 @@ import type {
   CreateClassSessionPayload,
 } from "./attendance.types";
 
+// Obtiene la fecha actual en formato YYYY-MM-DD
 function getTodayDate(): string {
   const today = new Date();
 
@@ -23,10 +23,12 @@ function getTodayDate(): string {
   return `${year}-${month}-${day}`;
 }
 
+// Centraliza las operaciones de asistencia y el estado de carga y error
 export function useAttendance() {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
 
+  // Crea una sesión y administra los estados de carga y error
   async function createSession(
     courseOfferingId: string,
     payload: CreateClassSessionPayload,
@@ -59,12 +61,8 @@ export function useAttendance() {
     }
   }
 
-  /**
-   * Guarda la asistencia de una sesión que ya existe.
-   *
-   * Se utiliza cuando el profesor creó previamente
-   * una clase y luego entra a tomar asistencia.
-   */
+  //Guarda la asistencia de una sesión que ya existe.
+  //Se utiliza cuando el profesor creó previamenteuna clase y luego entra a tomar asistencia.
   async function saveAttendanceForSession(
     sessionId: string,
     students: BulkAttendanceItem[],
@@ -96,12 +94,9 @@ export function useAttendance() {
     }
   }
 
-  /**
-   * Flujo anterior de asistencia.
-   *
-   * Se mantiene para no romper el funcionamiento existente:
-   * busca la sesión del día y, si no existe, la crea.
-   */
+  //Flujo anterior de asistencia.
+  //Se mantiene para no romper el funcionamiento existente:busca la sesión del día y, si no existe, la crea.
+
   async function saveAttendance(
     courseOfferingId: string,
     students: BulkAttendanceItem[],
@@ -165,6 +160,7 @@ export function useAttendance() {
     }
   }
 
+  // Limpia el mensaje de error almacenado en el hook
   function clearError() {
     setError("");
   }

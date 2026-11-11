@@ -1,4 +1,4 @@
-
+// Datos personales e institucionales del estudiante
 export interface StudentProfile {
     id: string;
     userId: string;
@@ -16,6 +16,7 @@ export interface StudentProfile {
     deletedAt: string | null;
 }
 
+// Estructura de la respuesta del backend al consultar el perfil
 export interface StudentProfileResponse {
     success: boolean;
     data: StudentProfile;

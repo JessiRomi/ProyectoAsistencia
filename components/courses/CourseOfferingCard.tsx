@@ -5,15 +5,18 @@ import { AppCard } from "@/components/ui/AppCard";
 import type { CourseOffering } from "@/features/courses/courses.types";
 import { useAppTheme } from "@/features/theme/theme.provider";
 
+// Define los datos de la cursada y la acción al seleccionar la tarjeta
 type Props = {
   course: CourseOffering;
   onPress: () => void;
   cardColor?: string;
 };
 
+// Muestra una tarjeta con la información principal de una cursada
 export function CourseOfferingCard({ course, onPress, cardColor }: Props) {
   const { colors } = useAppTheme();
 
+  // Determina el color de acento personalizado o utiliza el color secundario del tema
   const accentColor = cardColor ?? colors.secondary;
 
   return (

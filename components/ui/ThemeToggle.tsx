@@ -2,8 +2,10 @@ import { Ionicons } from "@expo/vector-icons";
 import { Pressable, StyleSheet } from "react-native";
 import { useAppTheme } from "@/features/theme/theme.provider";
 
+// Permite alternar entre el modo claro y oscuro de la aplicación
 export function ThemeToggle() {
   const { mode, colors, toggleTheme } = useAppTheme();
+  // Determina si el tema oscuro está activo para adaptar el icono y la accesibilidad
   const isDark = mode === "dark";
 
   return (

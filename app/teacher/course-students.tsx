@@ -8,24 +8,29 @@ import { FeedbackState } from "@/components/ui/FeedbackState";
 import { useCourseStudents } from "@/features/courses/useCourseStudents";
 import { useAppTheme } from "@/features/theme/theme.provider";
 
+//Define la cantidad de estudiantes que muestran por pag
 const STUDENTS_PER_PAGE = 3;
 
 export default function CourseStudentsScreen() {
   const { colors } = useAppTheme();
   const params = useLocalSearchParams<{ id: string }>();
 
+  //Obtiene el ID de la cursada desde los parametros de navegacion
   const courseOfferingId = Array.isArray(params.id) ? params.id[0] : params.id;
 
+  //Obtiene los estudiantes inscriptos en la cursada y permite recargar los datos
   const { students, isLoading, error, reload } =
     useCourseStudents(courseOfferingId);
 
   const [currentPage, setCurrentPage] = useState(0);
 
+  //Calucula la cantidad de paginas y determina cual se puede mostrar
   const totalPages = Math.ceil(students.length / STUDENTS_PER_PAGE);
   const safePage = Math.min(currentPage, Math.max(totalPages - 1, 0));
 
   const startIndex = safePage * STUDENTS_PER_PAGE;
 
+  //Obtiene los estudiantes correspondientes
   const paginatedStudents = students.slice(
     startIndex,
     startIndex + STUDENTS_PER_PAGE,
@@ -33,6 +38,7 @@ export default function CourseStudentsScreen() {
 
   const cardColors = [colors.secondary, colors.accent, colors.success];
 
+  //Controla los estados de carga, error y ausencia de estudiantes
   if (isLoading) {
     return <FeedbackState type="loading" message="Cargando estudiantes..." />;
   }
@@ -55,7 +61,7 @@ export default function CourseStudentsScreen() {
       <View style={styles.header}>
         <Text style={[styles.title, { color: colors.text }]}>Estudiantes</Text>
       </View>
-
+      {/* LISTADO DE ESTUDIANTES Y CONTROLES DE PAGINACIÓN */}
       <FlatList
         data={paginatedStudents}
         keyExtractor={(item) => item.id}

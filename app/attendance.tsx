@@ -7,9 +7,13 @@ import GeometricActionButton from "@/components/attendance/GeometricActionButton
 import { AppCard } from "@/components/ui/AppCard";
 import { useAppTheme } from "@/features/theme/theme.provider";
 
+// Pantalla principal de asistencia del estudiante
 export default function AttendanceScreen() {
   const { colors } = useAppTheme();
 
+  {
+    /* Restringe el acceso a esta pantalla al rol STUDENT. */
+  }
   return (
     <RouteGuard allowedRoles={["STUDENT"]}>
       <>
@@ -55,6 +59,7 @@ export default function AttendanceScreen() {
               </Text>
             </View>
 
+            {/* Permite al estudiante escanear el código QR para registrar su asistencia. */}
             <View style={styles.qrContainer}>
               <GeometricActionButton
                 label="ESCANEAR QR"
@@ -62,7 +67,8 @@ export default function AttendanceScreen() {
                 onPress={() => router.push("/qr-scanner")}
               />
             </View>
-
+            
+            {/* Permite acceder al historial de asistencias registradas. */}
             <Pressable
               onPress={() => router.push("/attendance-history")}
               accessibilityRole="button"

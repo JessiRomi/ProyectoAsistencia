@@ -1,14 +1,14 @@
-
 import { useCallback, useEffect, useState } from "react";
-
 import { getMyEnrollments } from "./courses.service";
 import type { StudentEnrollment } from "./courses.types";
 
+// Gestiona la consulta de las inscripciones del estudiante autenticado
 export function useStudentEnrollments() {
     const [enrollments, setEnrollments] = useState<StudentEnrollment[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState("");
 
+    // Permite actualizar manualmente la lista de inscripciones
     const loadEnrollments = useCallback(async () => {
         setIsLoading(true);
         setError("");
@@ -29,6 +29,7 @@ export function useStudentEnrollments() {
         }
     }, []);
 
+    // Carga las inscripciones al iniciar el hook y evita actualizar el estado si el efecto ya se limpió
     useEffect(() => {
         let active = true;
 

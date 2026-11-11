@@ -22,14 +22,17 @@ export default function NewClassScreen() {
   const { colors } = useAppTheme();
   const params = useLocalSearchParams<{ id?: string | string[] }>();
 
+  //Recupera el ID de la cursada recibida
   const id = Array.isArray(params.id) ? params.id[0] : params.id;
 
   const { createSession, isSaving, error, clearError } = useAttendance();
 
+  //Inicializa los campos del formulario y establece la fecha actual por defecto
   const [date, setDate] = useState(getTodayDate());
   const [topic, setTopic] = useState("");
   const [notes, setNotes] = useState("");
 
+  //Valida los datos ingresados y solicitados al backend la creacion de una nueva clase
   async function handleCreateClass() {
     if (!id) {
       Alert.alert("Error", "No se recibió la cursada seleccionada.");
@@ -48,7 +51,7 @@ export default function NewClassScreen() {
 
     try {
       clearError();
-
+      //Envia la fecha, el tema y las observaciones para registar la nueva sesion
       const session = await createSession(id, {
         date: date.trim(),
         topic: topic.trim(),
@@ -58,7 +61,7 @@ export default function NewClassScreen() {
             }
           : {}),
       });
-
+      //Permite continuar generando un QR o resgistando la asistencia manual
       Alert.alert(
         "Clase creada",
         "La clase se creó correctamente. ¿Cómo querés continuar?",
@@ -128,7 +131,7 @@ export default function NewClassScreen() {
             </Text>
           </View>
         </View>
-
+        {/* FORMULARIO PARA REGISTRAR UNA NUEVA CLASE */}
         <AppCard style={styles.formCard}>
           <View style={styles.fieldHeader}>
             <View
@@ -311,6 +314,7 @@ export default function NewClassScreen() {
   );
 }
 
+// Obtiene la fecha actual en formato AAAA-MM-DD.
 function getTodayDate(): string {
   const today = new Date();
 

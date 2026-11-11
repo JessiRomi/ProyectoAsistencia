@@ -18,6 +18,7 @@ import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { useAppTheme } from "@/features/theme/theme.provider";
 import { useSession } from "../features/auth/useSession";
 
+// Define la ruta de acceso según el rol del usuario
 const ROLE_ROUTES = {
   STUDENT: "/(tabs)",
   TEACHER: "/teacher",
@@ -35,6 +36,7 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Valida las credenciales, inicia sesión y redirige según el rol
   async function handleLogin() {
     setError(null);
 
@@ -53,6 +55,7 @@ export default function LoginScreen() {
     try {
       const authenticatedUser = await login(email.trim(), password);
 
+      // Cierra la sesión si el perfil no tiene acceso a la aplicación
       if (!(authenticatedUser.role in ROLE_ROUTES)) {
         await logout();
         setError("Tu perfil no tiene acceso a esta aplicación.");
@@ -62,8 +65,10 @@ export default function LoginScreen() {
       const route =
         ROLE_ROUTES[authenticatedUser.role as keyof typeof ROLE_ROUTES];
 
+      // Redirige al usuario a la pantalla correspondiente a su rol
       router.replace(route);
     } catch (error) {
+      // Captura y muestra los errores que ocurren durante el inicio de sesión
       console.error("Error de login:", error);
 
       setError(
@@ -74,6 +79,9 @@ export default function LoginScreen() {
     }
   }
 
+  {
+    /* Ajusta la pantalla para evitar que el teclado cubra el formulario. */
+  }
   return (
     <KeyboardAvoidingView
       style={[styles.container, { backgroundColor: colors.background }]}
@@ -212,7 +220,8 @@ export default function LoginScreen() {
               />
             </Pressable>
           </View>
-
+          
+          {/* Muestra los errores de validación o autenticación. */}
           {error !== null && (
             <View
               style={[

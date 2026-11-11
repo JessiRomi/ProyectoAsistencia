@@ -1,13 +1,11 @@
 import { Platform } from "react-native";
 import * as SecureStore from "expo-secure-store";
 
+// Clave utilizada para identificar el token en el almacenamiento local
 const TOKEN_KEY = "accessToken";
 
-/**
- * Obtiene el token de autenticación.
- * Android utiliza SecureStore.
- * Web utiliza localStorage.
- */
+//Obtiene el token de autenticación. Android utiliza SecureStore.
+//Web utiliza localStorage.
 export async function getToken(): Promise<string | null> {
   if (Platform.OS === "web") {
     if (typeof window === "undefined") {
@@ -20,9 +18,7 @@ export async function getToken(): Promise<string | null> {
   return SecureStore.getItemAsync(TOKEN_KEY);
 }
 
-/**
- * Guarda el token de autenticación.
- */
+//Guarda el token de autenticación.
 export async function setToken(token: string): Promise<void> {
   if (Platform.OS === "web") {
     if (typeof window === "undefined") {
@@ -36,9 +32,7 @@ export async function setToken(token: string): Promise<void> {
   await SecureStore.setItemAsync(TOKEN_KEY, token);
 }
 
-/**
- * Elimina el token de autenticación.
- */
+//Elimina el token de autenticación.
 export async function removeToken(): Promise<void> {
   if (Platform.OS === "web") {
     if (typeof window === "undefined") {

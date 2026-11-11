@@ -11,6 +11,7 @@ import LogoutButton from "@/components/logout-button";
 import { useAppTheme } from "@/features/theme/theme.provider";
 import { useStudentProfile } from "@/features/student-profile/useStudentProfile";
 
+// Gestiona la visualización del perfil y sus estados de carga y error
 function StudentProfileContent() {
   const { profile, isLoading, error, reload } = useStudentProfile();
   const { colors } = useAppTheme();
@@ -20,6 +21,7 @@ function StudentProfileContent() {
   const [showAdditionalInfo, setShowAdditionalInfo] = useState(false);
   const [showInstitutionalInfo, setShowInstitutionalInfo] = useState(false);
 
+  // Evita repetir la carga inicial del perfil durante el ciclo de vida del componente
   useEffect(() => {
     if (initialLoadStarted.current) {
       return;
@@ -29,6 +31,7 @@ function StudentProfileContent() {
     void reload();
   }, [reload]);
 
+  // Prepara los datos del perfil para mostrarlos en pantalla
   const fullName = profile
     ? `${profile.firstName} ${profile.lastName}`.trim()
     : "Nombre no disponible";
@@ -95,7 +98,7 @@ function StudentProfileContent() {
               </Text>
             )}
           </View>
-
+          {/* Muestra el estado de carga, error o la información del perfil según corresponda. */}
           {isLoading && !profile ? (
             <FeedbackState type="loading" message="Cargando tu perfil..." />
           ) : error && !profile ? (
@@ -284,6 +287,7 @@ interface ProfileRowProps {
   iconColor: string;
 }
 
+// Componente reutilizable para mostrar un dato del perfil con su icono y etiqueta
 function ProfileRow({ icon, label, value, iconColor }: ProfileRowProps) {
   const { colors } = useAppTheme();
 
@@ -304,12 +308,14 @@ function ProfileRow({ icon, label, value, iconColor }: ProfileRowProps) {
   );
 }
 
+// Separador visual reutilizable entre los datos del perfil
 function Divider() {
   const { colors } = useAppTheme();
 
   return <View style={[styles.divider, { backgroundColor: colors.border }]} />;
 }
 
+// Restringe el acceso a esta pantalla exclusivamente a usuarios con rol STUDENT
 export default function StudentProfileScreen() {
   return (
     <RouteGuard allowedRoles={["STUDENT"]}>

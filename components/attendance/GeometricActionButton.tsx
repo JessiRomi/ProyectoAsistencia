@@ -1,5 +1,6 @@
 import { AppButton, type AppButtonProps } from "@/components/ui/AppButton";
 
+// Define las propiedades del botón reutilizable a partir de AppButtonProps
 type GeometricActionButtonProps = {
   label: string;
   icon: AppButtonProps["icon"];
@@ -9,6 +10,7 @@ type GeometricActionButtonProps = {
   loading?: boolean;
 };
 
+// Encapsula AppButton con una configuración visual y funcional estandarizada
 export default function GeometricActionButton({
   label,
   icon,

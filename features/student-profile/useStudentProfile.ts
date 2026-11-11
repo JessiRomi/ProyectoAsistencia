@@ -1,14 +1,14 @@
-
 import { useCallback, useState } from "react";
-
 import { getMyStudentProfile } from "./student-profile.service";
 import type { StudentProfile } from "./student-profile.types";
 
+// Gestiona los datos, el estado de carga y los errores del perfil del estudiante
 export function useStudentProfile() {
     const [profile, setProfile] = useState<StudentProfile | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
+    // Consulta nuevamente el perfil y actualiza su información
     const reload = useCallback(async () => {
         setIsLoading(true);
         setError(null);

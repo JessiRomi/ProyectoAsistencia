@@ -1,14 +1,14 @@
-
 import { useCallback, useEffect, useState } from "react";
-
 import { getMyCourseOfferings } from "./courses.service";
 import type { CourseOffering } from "./courses.types";
 
+// Gestiona la consulta de las cursadas asignadas al docente
 export function useTeacherCourses() {
   const [courses, setCourses] = useState<CourseOffering[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
+  // Permite actualizar manualmente la lista de cursadas
   const loadCourses = useCallback(async () => {
     setIsLoading(true);
     setError("");
@@ -23,7 +23,7 @@ export function useTeacherCourses() {
       setIsLoading(false);
     }
   }, []);
-
+  // Carga las cursadas al iniciar el hook y evita actualizar el estado después de limpiar el efecto
   useEffect(() => {
     let active = true;
 

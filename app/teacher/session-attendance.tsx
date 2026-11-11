@@ -163,6 +163,8 @@ export default function SessionAttendanceScreen() {
   const { colors } = useAppTheme();
   const [currentPage, setCurrentPage] = useState(0);
   const [isClosing, setIsClosing] = useState(false);
+
+  // Obtiene los identificadores de la sesión y de la oferta de curso desde la navegación
   const params = useLocalSearchParams<{
     id?: string | string[];
     courseOfferingId?: string | string[];
@@ -174,6 +176,7 @@ export default function SessionAttendanceScreen() {
     ? params.courseOfferingId[0]
     : params.courseOfferingId;
 
+  // Recupera los registros de asistencia y los datos de las sesiones del curso
   const { attendance, isLoading, error, reload } =
     useSessionAttendance(sessionId);
 
@@ -187,6 +190,8 @@ export default function SessionAttendanceScreen() {
   const session = sessions.find((item) => item.id === sessionId);
 
   const isSessionOpen = session?.status === "OPEN";
+
+  // Solicita confirmación y cierra la sesión, impidiendo nuevos registros de asistencia
   const handleCloseSession = () => {
     if (!sessionId || !isSessionOpen || isClosing) return;
 
@@ -292,7 +297,7 @@ export default function SessionAttendanceScreen() {
             </Text>
           </View>
         </View>
-
+        {/* Acciones disponibles únicamente mientras la sesión está abierta */}
         {!isLoadingSessions && !sessionsError && isSessionOpen && (
           <View style={styles.qrButton}>
             <View style={{ gap: 12 }}>

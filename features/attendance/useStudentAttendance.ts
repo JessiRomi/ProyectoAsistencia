@@ -1,18 +1,18 @@
-
 import { useCallback, useEffect, useState } from "react";
-
 import { getMyAttendance } from "./attendance.service";
 import type {
   StudentAttendanceRecord,
   StudentAttendanceTotals,
 } from "./attendance.types";
 
+// Gestiona el historial y los totales de asistencia del estudiante
 export function useStudentAttendance(courseOfferingId?: string) {
   const [records, setRecords] = useState<StudentAttendanceRecord[]>([]);
   const [totals, setTotals] = useState<StudentAttendanceTotals>({});
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
+  // Consulta la asistencia y actualiza los registros, totales y estados de carga
   const loadAttendance = useCallback(async () => {
     setIsLoading(true);
     setError("");
@@ -35,6 +35,7 @@ export function useStudentAttendance(courseOfferingId?: string) {
     }
   }, [courseOfferingId]);
 
+  // Carga la asistencia al iniciar el hook o cuando cambia la cursada
   useEffect(() => {
     let active = true;
 

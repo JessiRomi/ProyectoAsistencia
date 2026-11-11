@@ -16,8 +16,10 @@ import type { ClassSession } from "@/features/attendance/attendance.types";
 import { useCourseSessions } from "@/features/attendance/useCourseSessions";
 import { useAppTheme } from "@/features/theme/theme.provider";
 
+//Define la cantidad de clases que se muestran por pagina
 const SESSIONS_PER_PAGE = 3;
 
+//Convierte la fecha en formato dia/mes/año
 function formatDate(dateString: string) {
   const date = new Date(dateString);
 
@@ -32,10 +34,12 @@ function formatDate(dateString: string) {
   return `${day}/${month}/${year}`;
 }
 
+//Traduce el estado de la clase para mostrarlo en pantalla
 function getStatusLabel(status: ClassSession["status"]) {
   return status === "CLOSED" ? "Cerrada" : "Abierta";
 }
 
+//Representa cada clase del historial 
 function SessionCard({
   session,
   cardColor,
@@ -46,6 +50,7 @@ function SessionCard({
   const { colors } = useAppTheme();
   const isClosed = session.status === "CLOSED";
 
+  //Abre el detalle de la asistencia de la clase seleccionada
   function openSessionDetail() {
     router.push({
       pathname: "/teacher/session-attendance",
@@ -153,12 +158,14 @@ export default function CourseSessionsScreen() {
 
   const courseOfferingId = Array.isArray(params.id) ? params.id[0] : params.id;
 
+//Obtine las clase registradas para la cursada
   const { sessions, isLoading, error, reload } =
     useCourseSessions(courseOfferingId);
 
   const totalPages = Math.ceil(sessions.length / SESSIONS_PER_PAGE);
   const safePage = Math.min(currentPage, Math.max(totalPages - 1, 0));
 
+  //Calcula las clases que corresponden a la pag actual
   const startIndex = safePage * SESSIONS_PER_PAGE;
   const paginatedSessions = sessions.slice(
     startIndex,
@@ -168,7 +175,7 @@ export default function CourseSessionsScreen() {
   const cardColors = [colors.secondary, colors.accent, colors.success];
 
   return (
-    <>
+    <> {/* Estados de carga, error, listado vacio e historial*/}
       <Stack.Screen options={{ headerShown: false }} />
 
       <View style={[styles.container, { backgroundColor: colors.background }]}>

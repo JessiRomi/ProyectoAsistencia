@@ -1,6 +1,7 @@
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { StyleProp, TextStyle } from "react-native";
 
+// Relaciona los nombres simbólicos con los iconos equivalentes de MaterialIcons
 const MAPPING = {
   "house.fill": "home",
   "paperplane.fill": "send",
@@ -10,6 +11,7 @@ const MAPPING = {
 
 type IconSymbolName = keyof typeof MAPPING;
 
+// Define las propiedades necesarias para configurar el icono
 type IconSymbolProps = {
   name: IconSymbolName;
   size?: number;
@@ -17,6 +19,7 @@ type IconSymbolProps = {
   style?: StyleProp<TextStyle>;
 };
 
+// Renderiza un icono de MaterialIcons a partir de un nombre simbólico
 export function IconSymbol({
   name,
   size = 24,

@@ -12,6 +12,7 @@ export default function TeacherProfileScreen() {
   const { user } = useSession();
   const { colors } = useAppTheme();
 
+  //Verifica que exista una sesion de usuario para mostrar el perfil
   if (!user) {
     return (
       <SafeAreaView
@@ -25,7 +26,7 @@ export default function TeacherProfileScreen() {
       </SafeAreaView>
     );
   }
-
+  // Recupera el nombre y apellido para mostrarlos individualmente
   const fullName = user.profile
     ? `${user.profile.firstName} ${user.profile.lastName}`.trim()
     : "Sin nombre registrado";
@@ -70,7 +71,7 @@ export default function TeacherProfileScreen() {
         <Text style={[styles.sectionTitle, { color: colors.text }]}>
           Información personal
         </Text>
-
+        {/* DATOS PERSONALES Y DE ACCESO DEL DOCENTE */}
         <AppCard style={styles.infoCard}>
           <View style={styles.infoRow}>
             <View

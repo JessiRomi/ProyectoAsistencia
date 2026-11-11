@@ -1,3 +1,4 @@
+// Paleta de colores utilizada por la aplicación en modo claro
 export const COLORS = {
   primary: "#0B2D6B",
   secondary: "#2563EB",
@@ -19,6 +20,7 @@ export const COLORS = {
   inactive: "#94A3B8",
 };
 
+// Variantes de la paleta para el modo oscuro
 export const DARK_COLORS = {
   primary: "#2563EB",
   secondary: "#60A5FA",

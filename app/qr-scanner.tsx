@@ -16,6 +16,7 @@ import { RouteGuard } from "@/components/auth/RouteGuard";
 import { useQrScanner } from "@/features/attendance/useQrScanner";
 import { useAppTheme } from "@/features/theme/theme.provider";
 
+// Protege la pantalla de escaneo para que solo accedan los estudiantes
 export default function QrScannerScreen() {
   return (
     <RouteGuard allowedRoles={["STUDENT"]}>
@@ -24,6 +25,7 @@ export default function QrScannerScreen() {
   );
 }
 
+// Gestiona los permisos de cámara, el escaneo y el resultado de la validación
 function QrScannerContent() {
   const { colors } = useAppTheme();
   const [permission, requestPermission] = useCameraPermissions();
@@ -40,6 +42,7 @@ function QrScannerContent() {
     );
   }
 
+  // Solicita autorización antes de habilitar el escáner
   if (!permission.granted) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -90,9 +93,8 @@ function QrScannerContent() {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Stack.Screen options={{ headerShown: false }} />
-
       <Header />
-
+      // Mientras no exista un resultado, mantiene activa la interfaz de escaneo
       {!value ? (
         <ScrollView
           contentContainerStyle={styles.scanContent}
@@ -109,6 +111,7 @@ function QrScannerContent() {
           </View>
 
           <View style={[styles.cameraShell, { borderColor: colors.border }]}>
+            {/* Lee únicamente códigos QR y procesa la lectura cuando el escáner está habilitado. */}
             <CameraView
               style={StyleSheet.absoluteFill}
               facing="back"
@@ -239,6 +242,7 @@ function QrScannerContent() {
                 : "No fue posible completar el registro de asistencia."}
           </Text>
 
+          {/* Informa al estudiante que el servidor está validando el registro. */}
           {status === "validating" && (
             <AppCard style={styles.noticeCard}>
               <View style={styles.notice}>
@@ -307,6 +311,7 @@ function QrScannerContent() {
             </AppCard>
           )}
 
+          {/* Permite volver a escanear o regresar a la pantalla anterior. */}
           <View style={styles.actions}>
             {status !== "validating" && (
               <AppButton
@@ -329,6 +334,7 @@ function QrScannerContent() {
   );
 }
 
+// Renderiza el encabezado de la pantalla de escaneo
 function Header() {
   const { colors } = useAppTheme();
 
@@ -368,6 +374,7 @@ function Header() {
   );
 }
 
+// Botón reutilizable para regresar a la pantalla anterior
 function BackButton({ onPress }: { onPress: () => void }) {
   const { colors } = useAppTheme();
 

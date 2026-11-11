@@ -9,6 +9,7 @@ import { RouteGuard } from "@/components/auth/RouteGuard";
 import { useAppTheme } from "@/features/theme/theme.provider";
 import { useStudentEnrollments } from "@/features/courses/useStudentEnrollments";
 
+// Traduce los días de la semana a sus nombres en español
 const DAYS: Record<number, string> = {
   0: "Domingo",
   1: "Lunes",
@@ -19,6 +20,7 @@ const DAYS: Record<number, string> = {
   6: "Sábado",
 };
 
+// Convierte los códigos de turno en descripciones para la interfaz
 const SHIFTS: Record<string, string> = {
   MORNING: "Mañana",
   AFTERNOON: "Tarde",
@@ -29,6 +31,7 @@ const SHIFTS: Record<string, string> = {
 
 const PAGE_SIZE = 3;
 
+// Protege el acceso al listado de materias para el rol STUDENT
 export default function StudentSubjectsScreen() {
   return (
     <RouteGuard allowedRoles={["STUDENT"]}>
@@ -37,6 +40,7 @@ export default function StudentSubjectsScreen() {
   );
 }
 
+// Gestiona las inscripciones, la información de las materias y su visualización
 function StudentSubjectsContent() {
   const { enrollments, isLoading, error, reload } = useStudentEnrollments();
 
@@ -45,10 +49,12 @@ function StudentSubjectsContent() {
   const [expandedSubjects, setExpandedSubjects] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(0);
 
+  // Calcula la cantidad de páginas según el número de inscripciones
   const totalPages = Math.ceil(enrollments.length / PAGE_SIZE);
 
   const safeCurrentPage = Math.min(currentPage, Math.max(totalPages - 1, 0));
 
+  // Obtiene las inscripciones correspondientes a la página actual
   const visibleEnrollments = enrollments.slice(
     safeCurrentPage * PAGE_SIZE,
     safeCurrentPage * PAGE_SIZE + PAGE_SIZE,
@@ -64,10 +70,12 @@ function StudentSubjectsContent() {
     );
   }
 
+  // Retrocede una página sin permitir índices negativos
   function goToPreviousPage() {
     setCurrentPage((current) => Math.max(current - 1, 0));
   }
 
+  // Avanza una página sin superar el límite disponible
   function goToNextPage() {
     setCurrentPage((current) => Math.min(current + 1, totalPages - 1));
   }
@@ -122,6 +130,7 @@ function StudentSubjectsContent() {
           />
         ) : (
           <>
+            {/* Muestra las inscripciones de la página actual. */}
             {visibleEnrollments.map((enrollment, index) => {
               const subjectColor =
                 subjectColors[
@@ -219,7 +228,7 @@ function StudentSubjectsContent() {
                       color={subjectColor}
                     />
                   </Pressable>
-
+                  {/* Presenta los datos adicionales de la cursada seleccionada. */}
                   {isExpanded && (
                     <>
                       <View
@@ -279,7 +288,7 @@ function StudentSubjectsContent() {
                 </AppCard>
               );
             })}
-
+            {/* Permite navegar entre las páginas del listado de materias. */}
             {totalPages > 1 && (
               <View style={styles.pagination}>
                 <AppButton
@@ -324,6 +333,7 @@ interface InfoRowProps {
   value: string;
 }
 
+// Componente reutilizable para mostrar datos de una cursada
 function InfoRow({ icon, label, value }: InfoRowProps) {
   const { colors } = useAppTheme();
 
@@ -459,13 +469,13 @@ const styles = StyleSheet.create({
   },
 
   backButton: {
-  width: 44,
-  height: 44,
-  alignItems: "center",
-  justifyContent: "center",
-},
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
+  },
 
-backButtonPressed: {
-  opacity: 0.6,
-},
+  backButtonPressed: {
+    opacity: 0.6,
+  },
 });

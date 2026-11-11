@@ -9,6 +9,7 @@ type Props = {
   onChange: (status: AttendanceStatus) => void;
 };
 
+// Define los estados de asistencia disponibles y su representación visual
 const STATUS_OPTIONS: {
   value: AttendanceStatus;
   label: string;
@@ -41,11 +42,13 @@ const STATUS_OPTIONS: {
   },
 ];
 
+// Permite seleccionar un estado de asistencia y notificar el cambio al componente padre
 export function AttendanceStatusSelector({ status, onChange }: Props) {
   const { colors } = useAppTheme();
 
   return (
     <View style={styles.container}>
+      {/* Genera una opción seleccionable para cada estado de asistencia. */}
       {STATUS_OPTIONS.map((option) => {
         const isActive = status === option.value;
         const activeColor = colors[option.colorKey];

@@ -23,11 +23,13 @@ import { useTeacherCourses } from "@/features/courses/useTeacherCourses";
 
 import type { AttendanceStatus } from "@/features/attendance/attendance.types";
 
+//Estructura que almacena el estado de la asistencia 
 type AttendanceState = Record<string, AttendanceStatus>;
 
 export default function TeacherAttendanceScreen() {
   const { colors } = useAppTheme();
 
+  //Recupera el ID de la cursada y de la clase enviados
   const params = useLocalSearchParams<{
     id?: string;
     sessionId?: string;
@@ -65,6 +67,8 @@ export default function TeacherAttendanceScreen() {
 
   const [attendance, setAttendance] = useState<AttendanceState>({});
 
+  //Inicia con todos los estudiantes como ausente
+  //Los estados se modifican por el docente 
   const attendanceWithDefaults: AttendanceState = {
     ...Object.fromEntries(
       students.map((student) => [student.id, "ABSENT" as AttendanceStatus]),
@@ -72,13 +76,14 @@ export default function TeacherAttendanceScreen() {
     ...attendance,
   };
 
+  //Actualiza el estado de la asistencia del estudiante seleccionado
   function handleStatusChange(studentId: string, status: AttendanceStatus) {
     setAttendance((current) => ({
       ...current,
       [studentId]: status,
     }));
   }
-
+//Valida que la clase este abierta y registrar asistencia 
   async function handleSaveAttendance() {
     if (sessionId) {
       if (isLoadingSessions) {
@@ -149,6 +154,7 @@ export default function TeacherAttendanceScreen() {
     }
   }
 
+  //Controla los estados de carga y los posibles errores antes de mostrar el listado
   if (
     isLoadingCourses ||
     isLoadingStudents ||
@@ -313,7 +319,7 @@ export default function TeacherAttendanceScreen() {
             borderTopColor: colors.border,
           },
         ]}
-      >
+      > //Confirma y envia los registros
         <AppButton
           label="Guardar asistencia"
           icon="checkmark-done"

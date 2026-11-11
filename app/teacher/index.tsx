@@ -11,36 +11,43 @@ import { useSession } from "@/features/auth/useSession";
 import { useTeacherCourses } from "@/features/courses/useTeacherCourses";
 import LogoutButton from "@/components/logout-button";
 
+//Define la cantidad de cursadas que se muestran por pagina
 const PAGE_SIZE = 3;
 
 export default function TeacherHomeScreen() {
+  //Obtiene el tema visual, los datos del usuario y las cursadas asignadas
   const { colors } = useAppTheme();
   const { user } = useSession();
   const { courses, isLoading, error, reload } = useTeacherCourses();
 
   const [currentPage, setCurrentPage] = useState(0);
 
+  //Recupera el nombre del docente para personalizar el saludo
   const firstName = user?.profile?.firstName?.trim() || "Docente";
 
   const totalPages = Math.ceil(courses.length / PAGE_SIZE);
 
+  //Obtiene las cursadas y useMemo evita recalcular el listado mientras sus dependencias no cambien
   const paginatedCourses = useMemo(() => {
     const startIndex = currentPage * PAGE_SIZE;
     return courses.slice(startIndex, startIndex + PAGE_SIZE);
   }, [courses, currentPage]);
 
+  //Navega a la pantalla del perfil docente
   function handleProfile() {
     router.push("/teacher/profile");
   }
-
+//Retrocede una pagina sin permitir valores menores a cero
   function handlePreviousPage() {
     setCurrentPage((page) => Math.max(page - 1, 0));
   }
 
+  //Avanza un pagina sin superar la ultima disponible
   function handleNextPage() {
     setCurrentPage((page) => Math.min(page + 1, totalPages - 1));
   }
 
+  //Controla los estados de carga, error y ausencia de cursadas asignadas
   if (isLoading) {
     return <FeedbackState type="loading" message="Cargando tus cursadas..." />;
   }
@@ -93,6 +100,7 @@ export default function TeacherHomeScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
+      {/* LISTADO DE CURSADAS, PERFIL DEL DOCENTE Y PAGINACIÓN */}
       <FlatList
         data={paginatedCourses}
         keyExtractor={(item) => item.id}

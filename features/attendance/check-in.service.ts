@@ -1,6 +1,6 @@
-
 import { apiClient } from "../../lib/api/api.client";
 
+// Configuración predeterminada de duración y rotación del registro QR
 const CHECK_IN_CONFIG = {
     durationMinutes: 15,
     rotationSeconds: 30,
@@ -25,6 +25,7 @@ export interface OpenCheckInWindowPayload {
     radiusMeters?: number;
 }
 
+// Opciones permitidas para abrir una ventana QR, con o sin geolocalización
 export type OpenCheckInWindowOptions =
     | {
         mode?: "QR";
@@ -42,7 +43,7 @@ interface ApiResponse<T> {
     timestamp: string;
 }
 
-/* Abre la ventana de autoregistro QR o QR con geolocalización. */
+//Abre la ventana de autoregistro QR o QR con geolocalización
 export async function openCheckInWindow(
     sessionId: string,
     options: OpenCheckInWindowOptions = { mode: "QR" },
@@ -67,7 +68,7 @@ export async function openCheckInWindow(
     );
 }
 
-/* Obtiene el token QR vigente de una clase. */
+//Obtiene el token QR vigente de una clase
 export async function getCheckInQr(
     sessionId: string,
 ): Promise<CheckInQrResponse> {

@@ -1,9 +1,11 @@
+// Estados de asistencia admitidos por el backend
 export type AttendanceStatus =
   | "PRESENT"
   | "ABSENT"
   | "LATE"
   | "JUSTIFIED";
 
+// Datos necesarios para crear una sesión de clase
 export type CreateClassSessionPayload = {
   date: string;
   topic: string;
@@ -24,6 +26,7 @@ export type ClassSession = {
   updatedAt?: string;
 };
 
+// Estructura de los datos enviados para registrar asistencias en bloque
 export type BulkAttendanceItem = {
   studentId: string;
   status: AttendanceStatus;
@@ -34,10 +37,8 @@ export type BulkAttendancePayload = {
   records: BulkAttendanceItem[];
 };
 
-/**
- * Registro de asistencia devuelto por:
- * GET /class-sessions/{id}/attendance
- */
+//Registro de asistencia devuelto por: GET /class-sessions/{id}/attendance
+ 
 export type AttendanceRecord = {
   id: string;
   classSessionId: string;

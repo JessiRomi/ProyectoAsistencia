@@ -2,6 +2,7 @@ import { createContext, useEffect, useState, type ReactNode } from "react";
 import { authService } from "./auth.service";
 import type { User } from "./auth.types";
 
+// Verifica si el rol del usuario está habilitado para esta aplicación
 function isSupportedRole(role: string): role is "STUDENT" | "TEACHER" {
   return role === "STUDENT" || role === "TEACHER";
 }
@@ -14,6 +15,7 @@ export interface AuthContextType {
   logout: () => Promise<void>;
 }
 
+// Contexto que comparte el estado y las operaciones de autenticación
 export const AuthContext = createContext<AuthContextType | undefined>(
   undefined,
 );
@@ -22,12 +24,14 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
+// Proveedor global que administra la sesión del usuario
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   const isAuthenticated = user !== null;
 
+ // Comprueba si existe una sesión guardada y recupera los datos del usuario al iniciar la aplicación 
   useEffect(() => {
     let active = true;
 
@@ -102,6 +106,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     return authenticatedUser;
   }
 
+  // Cierra la sesión y limpia el usuario del estado global
   async function logout(): Promise<void> {
     await authService.logout();
     setUser(null);

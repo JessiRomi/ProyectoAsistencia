@@ -9,6 +9,7 @@ import { FeedbackState } from "@/components/ui/FeedbackState";
 import { useAppTheme } from "@/features/theme/theme.provider";
 import { useStudentAttendance } from "@/features/attendance/useStudentAttendance";
 
+// Define la ruta protegida para consultar el detalle de asistencia del estudiante
 export default function StudentSubjectAttendanceScreen() {
   return (
     <>
@@ -21,7 +22,9 @@ export default function StudentSubjectAttendanceScreen() {
   );
 }
 
+// Gestiona la consulta y visualización de las asistencias de una materia
 function StudentSubjectAttendanceContent() {
+  // Recupera los datos de la cursada enviados desde la pantalla anterior
   const params = useLocalSearchParams<{
     courseOfferingId?: string;
     subjectName?: string;
@@ -31,6 +34,7 @@ function StudentSubjectAttendanceContent() {
   const { colors } = useAppTheme();
   const insets = useSafeAreaInsets();
 
+  // Normaliza los parámetros recibidos para obtener un único valor
   const courseOfferingId = Array.isArray(params.courseOfferingId)
     ? params.courseOfferingId[0]
     : params.courseOfferingId;
@@ -43,9 +47,11 @@ function StudentSubjectAttendanceContent() {
     ? params.commission[0]
     : params.commission;
 
+  // Obtiene los registros, totales y estados de carga de la cursada seleccionada
   const { records, totals, isLoading, error, reload } =
     useStudentAttendance(courseOfferingId);
 
+  // Convierte los estados de asistencia del backend en etiquetas para la interfaz
   function getStatusText(status: string) {
     switch (status) {
       case "PRESENT":
@@ -61,6 +67,7 @@ function StudentSubjectAttendanceContent() {
     }
   }
 
+  // Asigna un color según el estado de asistencia.
   function getStatusColor(status: string) {
     switch (status) {
       case "PRESENT":
@@ -76,6 +83,7 @@ function StudentSubjectAttendanceContent() {
     }
   }
 
+  // Valida y formatea las fechas para mostrarlas en formato local
   function formatDate(date: string) {
     const parsedDate = new Date(date);
 
@@ -141,6 +149,7 @@ function StudentSubjectAttendanceContent() {
           </Text>
         </View>
 
+        {/* Informa cuando no se recibió el identificador de la cursada. */}
         {!courseOfferingId && (
           <AppCard style={styles.messageCard}>
             <Ionicons
@@ -174,6 +183,7 @@ function StudentSubjectAttendanceContent() {
           />
         )}
 
+        {/* Muestra los totales de asistencia según cada estado. */}
         {Boolean(courseOfferingId) && !isLoading && error === "" && (
           <>
             <AppCard style={styles.summaryCard}>
@@ -284,6 +294,7 @@ function StudentSubjectAttendanceContent() {
               Clases registradas
             </Text>
 
+            {/* Muestra las clases registradas con su fecha, tema y estado de asistencia. */}
             {sortedRecords.length === 0 ? (
               <AppCard style={styles.messageCard}>
                 <Ionicons
@@ -495,7 +506,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 21,
   },
-  
+
   backButton: {
     width: 44,
     height: 44,

@@ -23,6 +23,7 @@ import {
 } from "@/features/attendance/check-in.service";
 import { useAppTheme } from "@/features/theme/theme.provider";
 
+// Define el tiempo de rotación del QR y el radio permitido para validar la ubicación
 const ROTATION_SECONDS = 30;
 const LOCATION_RADIUS_METERS = 60;
 
@@ -55,6 +56,7 @@ export default function SessionQrScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Cambia la modalidad de registro y reinicia los datos del QR anterior
   function handleModeChange(mode: CheckInMode) {
     if (isLoading || mode === checkInMode) {
       return;
@@ -68,6 +70,7 @@ export default function SessionQrScreen() {
     setNow(0);
   }
 
+  // Solicita confirmación antes de cerrar la ventana actual y cambiar la modalidad
   function handleChangeMode() {
     if (!checkInMode || isLoading) {
       return;
@@ -105,7 +108,7 @@ export default function SessionQrScreen() {
     setNow(0);
     setRetryKey((previous) => previous + 1);
   }
-
+  // Inicializa la ventana de asistencia y administra la generación y renovación automática del QR
   useEffect(() => {
     const currentSessionId = typeof sessionId === "string" ? sessionId : "";
 
@@ -165,7 +168,7 @@ export default function SessionQrScreen() {
         }
       }
     }
-
+    // Abre la ventana de asistencia con o sin validación de ubicación, según la modalidad elegida
     async function initializeQr() {
       try {
         if (checkInMode === "QR_GEO") {
@@ -225,6 +228,7 @@ export default function SessionQrScreen() {
 
   const qrProgress = Math.min(100, (remaining / rotationSeconds) * 100);
 
+  // Navega al registro manual de asistencia para la sesión actual
   function handleManualAttendance() {
     if (!sessionId || !courseOfferingId) {
       Alert.alert(
@@ -282,7 +286,7 @@ export default function SessionQrScreen() {
               Seleccioná cómo deseas registrar la asistencia de esta clase.
             </Text>
           </View>
-
+          {/* Permite elegir entre QR tradicional y QR con validación geográfica. */}
           <View style={styles.modeSelector}>
             {!checkInMode ? (
               <>
@@ -361,7 +365,7 @@ export default function SessionQrScreen() {
               </View>
             )}
           </View>
-
+          {/* Muestra el estado de generación o el código QR vigente. */}
           <AppCard
             padding={15}
             style={[
@@ -431,7 +435,7 @@ export default function SessionQrScreen() {
               />
             </View>
           )}
-
+          {/* Muestra el tiempo restante para la renovación automática del código. */}
           {Boolean(checkInMode && qrValue && !error) && (
             <AppCard padding={14} style={styles.timerPanel}>
               <View style={styles.timerHeader}>

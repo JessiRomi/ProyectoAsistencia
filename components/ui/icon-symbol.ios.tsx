@@ -1,6 +1,7 @@
 import { SymbolView, SymbolViewProps, SymbolWeight } from 'expo-symbols';
 import { StyleProp, ViewStyle } from 'react-native';
 
+// Componente reutilizable para mostrar iconos del sistema con configuración personalizada
 export function IconSymbol({
   name,
   size = 24,
@@ -14,6 +15,7 @@ export function IconSymbol({
   style?: StyleProp<ViewStyle>;
   weight?: SymbolWeight;
 }) {
+  // Renderiza el icono aplicando sus propiedades visuales y estilos personalizados
   return (
     <SymbolView
       weight={weight}

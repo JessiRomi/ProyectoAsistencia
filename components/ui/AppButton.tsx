@@ -8,10 +8,12 @@ import {
   View,
 } from "react-native";
 
+// Define las variantes visuales, tamaños y posiciones de los iconos
 type ButtonVariant = "primary" | "secondary" | "danger";
 type ButtonSize = "small" | "medium" | "large";
 type IconPosition = "left" | "right";
 
+// Define las propiedades configurables del botón reutilizable
 export type AppButtonProps = {
   label: string;
   onPress: () => void;
@@ -24,6 +26,7 @@ export type AppButtonProps = {
   fullWidth?: boolean;
 };
 
+// Renderiza un botón adaptable al tema, con soporte para carga y deshabilitación
 export function AppButton({
   label,
   onPress,
@@ -37,8 +40,10 @@ export function AppButton({
 }: AppButtonProps) {
   const { colors } = useAppTheme();
 
+ // Evita la interacción mientras el botón está deshabilitado o procesando una acción 
   const isDisabled = disabled || loading;
 
+  // Centraliza los colores de cada variante según el tema activo
   const variantStyles = {
     primary: {
       backgroundColor: colors.primary,
@@ -57,6 +62,7 @@ export function AppButton({
     },
   };
 
+  // Define las dimensiones y tamaños de texto e iconos para cada tamaño
   const sizeStyles = {
     small: {
       minHeight: 40,

@@ -1,16 +1,17 @@
-
 import { useCallback, useEffect, useRef, useState } from "react";
-
 import { getCourseSessions } from "./attendance.service";
 import type { ClassSession } from "./attendance.types";
 
+// Gestiona la carga y actualización de las sesiones de una cursada
 export function useCourseSessions(courseOfferingId: string) {
   const [sessions, setSessions] = useState<ClassSession[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
+  // Identifica cada solicitud para evitar actualizar el estado con respuestas anteriores
   const requestId = useRef(0);
 
+  // Permite volver a cargar las sesiones cuando se necesita actualizar la información
   const loadSessions = useCallback(async () => {
     const currentRequestId = ++requestId.current;
 
@@ -43,6 +44,7 @@ export function useCourseSessions(courseOfferingId: string) {
     }
   }, [courseOfferingId]);
 
+  // Carga las sesiones iniciales cuando cambia la cursada y evita actualizar el estado si el efecto ya se limpio
   useEffect(() => {
     let active = true;
     const currentRequestId = ++requestId.current;

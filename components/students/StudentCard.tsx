@@ -4,16 +4,19 @@ import { AppCard } from "@/components/ui/AppCard";
 import { useAppTheme } from "@/features/theme/theme.provider";
 import type { EnrolledStudent } from "@/features/courses/courses.types";
 
+// Define los datos del estudiante y el color opcional de la tarjeta
 type Props = {
   student: EnrolledStudent;
   cardColor?: string;
 };
 
+// Muestra la información básica de un estudiante en una tarjeta reutilizable
 export function StudentCard({ student, cardColor }: Props) {
   const { colors } = useAppTheme();
 
   const accentColor = cardColor ?? colors.secondary;
 
+  // Genera las iniciales del estudiante para representarlas en el avatar
   const initials =
     `${student.firstName.charAt(0)}${student.lastName.charAt(0)}`.toUpperCase();
 

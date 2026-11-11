@@ -1,9 +1,6 @@
-
 import { apiClient } from "../../lib/api/api.client";
 
-/**
- * Estructura de una ventana de check-in abierta para el estudiante.
- */
+//Estructura de una ventana de check-in abierta para el estudiante.
 export interface OpenCheckInWindow {
     id: string;
     classSessionId: string;
@@ -31,19 +28,16 @@ export interface OpenCheckInWindow {
     };
 }
 
-/**
- * Respuesta estándar de la API.
- */
+//Respuesta estándar de la API
 interface ApiResponse<T> {
     success: boolean;
     data: T;
     timestamp: string;
 }
 
-/**
- * Datos necesarios para registrar asistencia mediante QR.
- * Las coordenadas son opcionales para conservar el modo QR tradicional.
- */
+//Datos necesarios para registrar asistencia mediante QR
+//Las coordenadas son opcionales para conservar el modo QR tradicional
+ 
 export interface StudentCheckInPayload {
     token: string;
     classSessionId: string;
@@ -52,7 +46,7 @@ export interface StudentCheckInPayload {
     accuracyMeters?: number;
 }
 
-/* Obtiene las ventanas de check-in abiertas para el estudiante autenticado*/
+//Obtiene las ventanas de check-in abiertas para el estudiante autenticado
 export async function getOpenCheckInWindows(): Promise<
     OpenCheckInWindow[]
 > {
@@ -66,9 +60,7 @@ export async function getOpenCheckInWindows(): Promise<
     return response.data;
 }
 
-/**
- * Registra la asistencia del estudiante mediante QR.
- */
+//Registra la asistencia del estudiante mediante QR.
 export async function registerStudentCheckIn(
     payload: StudentCheckInPayload,
 ): Promise<unknown> {

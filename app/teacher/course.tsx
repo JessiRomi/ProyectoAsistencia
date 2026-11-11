@@ -9,6 +9,7 @@ import { FeedbackState } from "@/components/ui/FeedbackState";
 import { useAppTheme } from "@/features/theme/theme.provider";
 import { useTeacherCourses } from "@/features/courses/useTeacherCourses";
 
+//Define las acciones disponibles para gestionar la cursada
 type CourseAction = {
   title: string;
   description: string;
@@ -25,10 +26,13 @@ export default function TeacherCourseScreen() {
 
   const id = Array.isArray(params.id) ? params.id[0] : params.id;
 
+  //Obtiene las cursadad asignadas al docente
   const { courses, isLoading, error } = useTeacherCourses();
 
+  //Busca la cursada seleccionada segun el ID recibido
   const course = courses.find((item) => item.id === id);
 
+  //Navega a la pantalla para crear una nueva clase
   function openNewClass() {
     if (!id) {
       return;
@@ -40,6 +44,7 @@ export default function TeacherCourseScreen() {
     });
   }
 
+  //Navega al listado de estudiantes inscriptos en la cursada
   function openStudents() {
     if (!id) {
       return;
@@ -51,6 +56,7 @@ export default function TeacherCourseScreen() {
     });
   }
 
+  //Navega al historial de las clases registradas
   function openSessions() {
     if (!id) {
       return;
@@ -109,9 +115,10 @@ export default function TeacherCourseScreen() {
       </View>
     );
   }
-
+  //Recupera el primer horario configurado por cursada
   const schedule = course.scheduleSlots?.[0];
 
+  //Define las opciones de gestion disponibles para docentes
   const actions: CourseAction[] = [
     {
       title: "Crear nueva clase",
@@ -174,7 +181,7 @@ export default function TeacherCourseScreen() {
             </View>
           </View>
         </View>
-
+        {/* INFORMACIÓN ACADÉMICA Y ORGANIZACIÓN DE LA CURSADA */}
         <AppCard style={styles.infoCard}>
           <Pressable
             onPress={() => setIsInfoExpanded((current) => !current)}
@@ -282,7 +289,7 @@ export default function TeacherCourseScreen() {
         <Text style={[styles.actionsTitle, { color: colors.text }]}>
           Gestión de la cursada
         </Text>
-
+        {/* ACCESOS A LAS FUNCIONALIDADES DE LA CURSADA */}
         <View style={styles.actionsContainer}>
           {actions.map((action) => (
             <Pressable
@@ -340,7 +347,7 @@ export default function TeacherCourseScreen() {
     </View>
   );
 }
-
+//Componente reutilizable para mostrar datos de la cursada
 function InfoRow({
   icon,
   label,
@@ -379,6 +386,7 @@ function InfoRow({
   );
 }
 
+//Convierte los codigos de turno en etiquetas comprensibles
 function formatShift(
   shift: "MORNING" | "AFTERNOON" | "EVENING" | "VIRTUAL" | "MIXED",
 ) {
@@ -393,6 +401,7 @@ function formatShift(
   return labels[shift];
 }
 
+//Convierte el numero del dia de la semana en su nombre
 function formatDay(day: number) {
   const labels: Record<number, string> = {
     1: "Lunes",

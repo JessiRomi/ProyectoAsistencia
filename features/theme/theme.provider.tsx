@@ -9,13 +9,12 @@ import {
   type ReactNode,
 } from "react";
 import { useColorScheme as useSystemColorScheme } from "react-native";
-
 import { COLORS, DARK_COLORS } from "@/constants/theme";
 
+// Clave utilizada para guardar la preferencia de tema en el almacenamiento local
 const THEME_STORAGE_KEY = "its-asistencia-theme";
 
 type ThemeMode = "light" | "dark";
-
 type ThemeColors = typeof COLORS;
 
 interface ThemeContextValue {
@@ -26,12 +25,14 @@ interface ThemeContextValue {
   isThemeLoaded: boolean;
 }
 
+// Contexto que comparte el tema activo, sus colores y las funciones para cambiarlo
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
 interface ThemeProviderProps {
   children: ReactNode;
 }
 
+// Proveedor global que administra el tema visual de la aplicación
 export function AppThemeProvider({ children }: ThemeProviderProps) {
   const systemColorScheme = useSystemColorScheme();
   const [mode, setMode] = useState<ThemeMode>(
@@ -39,6 +40,7 @@ export function AppThemeProvider({ children }: ThemeProviderProps) {
   );
   const [isThemeLoaded, setIsThemeLoaded] = useState(false);
 
+  // Recupera la preferencia de tema guardada al iniciar la aplicación
   useEffect(() => {
     let active = true;
 
@@ -65,6 +67,7 @@ export function AppThemeProvider({ children }: ThemeProviderProps) {
     };
   }, []);
 
+  // Cambia el tema activo y guarda la preferencia en AsyncStorage
   const setTheme = useCallback(async (nextMode: ThemeMode) => {
     setMode(nextMode);
 
@@ -79,6 +82,7 @@ export function AppThemeProvider({ children }: ThemeProviderProps) {
     void setTheme(mode === "light" ? "dark" : "light");
   }, [mode, setTheme]);
 
+  // Selecciona la paleta de colores correspondiente al tema activo
   const colors = mode === "dark" ? DARK_COLORS : COLORS;
 
   const value = useMemo(
@@ -97,6 +101,7 @@ export function AppThemeProvider({ children }: ThemeProviderProps) {
   );
 }
 
+// Hook para acceder al tema y sus funciones desde cualquier componente
 export function useAppTheme() {
   const context = useContext(ThemeContext);
 

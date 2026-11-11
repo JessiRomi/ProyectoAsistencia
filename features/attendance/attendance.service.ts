@@ -8,6 +8,7 @@ import type {
   StudentAttendanceResponse,
 } from "./attendance.types";
 
+// Crea una nueva sesión de clase para una cursada
 export async function createClassSession(
   courseOfferingId: string,
   payload: CreateClassSessionPayload,
@@ -24,6 +25,7 @@ export async function createClassSession(
   return response.data;
 }
 
+// Obtiene todas las sesiones de clase de una cursada
 export async function getCourseSessions(
   courseOfferingId: string,
 ): Promise<ClassSession[]> {
@@ -38,6 +40,7 @@ export async function getCourseSessions(
   return response.data;
 }
 
+// Obtiene los registros de asistencia de una sesión específica
 export async function getSessionAttendance(
   sessionId: string,
 ): Promise<AttendanceRecord[]> {
@@ -52,6 +55,7 @@ export async function getSessionAttendance(
   return response.data;
 }
 
+// Registra o actualiza en bloque las asistencias de una sesión
 export async function saveBulkAttendance(
   sessionId: string,
   payload: BulkAttendancePayload,
@@ -66,6 +70,7 @@ export async function saveBulkAttendance(
   });
 }
 
+// Cierra una sesión de clase para finalizar el registro de asistencia
 export async function closeClassSession(
   sessionId: string,
 ): Promise<void> {
@@ -78,11 +83,9 @@ export async function closeClassSession(
   });
 }
 
+//Obtiene el historial de asistencia del estudiante autenticado
+//Opcionalmente, filtra por una cursada específica
 
-/**
- * Obtiene el historial de asistencia del estudiante autenticado.
- * Opcionalmente, filtra por una cursada específica.
- */
 export async function getMyAttendance(
   courseOfferingId?: string,
 ): Promise<StudentAttendanceResponse> {

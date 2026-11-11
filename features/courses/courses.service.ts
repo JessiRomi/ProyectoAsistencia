@@ -5,6 +5,7 @@ import type {
   StudentEnrollment,
 } from "./courses.types";
 
+// Obtiene las cursadas asignadas al docente autenticado
 export async function getMyCourseOfferings(): Promise<CourseOffering[]> {
   const response = await apiClient<{
     success: boolean;
@@ -17,6 +18,7 @@ export async function getMyCourseOfferings(): Promise<CourseOffering[]> {
   return response.data;
 }
 
+// Obtiene los estudiantes inscriptos en una cursada específica
 export async function getCourseStudents(
   courseOfferingId: string,
 ): Promise<EnrolledStudent[]> {
@@ -30,6 +32,8 @@ export async function getCourseStudents(
 
   return response.data;
 }
+
+// Obtiene las inscripciones del estudiante autenticado
 export async function getMyEnrollments(): Promise<StudentEnrollment[]> {
   const response = await apiClient<{
     success: boolean;
